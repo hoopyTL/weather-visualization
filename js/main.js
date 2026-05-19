@@ -20,6 +20,7 @@ import * as task09 from './charts/task09-heatmapChart.js';
 import * as task10 from './charts/task10-scatterChart.js';
 import * as task11 from './charts/task11-areaChart.js';
 import * as task12 from './charts/task12-scatterChart2.js';
+import * as task13 from './charts/task13-uvHeatmap.js';
 
 /* ============================================================
    PAGE DEFINITIONS
@@ -60,6 +61,7 @@ const PAGES = {
       { id: 'task10', module: task10, title: 'UV vs Nhiệt độ' },
       { id: 'task11', module: task11, title: 'Độ dài ban ngày' },
       { id: 'task12', module: task12, title: 'Ban ngày vs UV' },
+      { id: 'task13', module: task13, title: 'UV cao nhất trong năm' },
     ],
   },
 };
@@ -229,7 +231,7 @@ function showError(message) {
         <h2>Lỗi tải dữ liệu</h2>
         <p class="text-muted">${message}</p>
         <p class="text-muted" style="font-size: var(--fs-sm)">
-          Đảm bảo file <code>datasets/df_weather_fixed_utf8.csv</code> tồn tại
+          Đảm bảo file <code>datasets/df_weather_cleaned_final.csv</code> tồn tại
           và bạn đang chạy qua HTTP server.
         </p>
       </div>`;

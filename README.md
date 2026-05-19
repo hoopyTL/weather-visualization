@@ -143,6 +143,7 @@ Navigate to [http://localhost:8000](http://localhost:8000) in your browser.
 | 10 | Chỉ số UV và nhiệt độ | Scatter plot | ⬜ |
 | 11 | Độ dài ban ngày | Area chart | ⬜ |
 | 12 | Ban ngày dài ảnh hưởng UV? | Scatter plot | ⬜ |
+| 13 | UV cao nhất trong năm (Tháng x Vùng) | Heatmap | ⬜ |
 
 ### Mandatory Requirements
 
