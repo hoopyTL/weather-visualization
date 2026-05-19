@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python (local server)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if ever needed)
+node_modules/
+package-lock.json
+
+# Datasets (large files – each member downloads separately)
+datasets/*.csv
+
+# Build artifacts
+dist/
+*.zip

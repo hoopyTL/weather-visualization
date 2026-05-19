@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard trực quan hóa dữ liệu thời tiết Việt Nam – 63 tỉnh thành, sử dụng D3.js">
+  <title>🌤️ Vietnam Weather Dashboard</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/charts.css">
+
+  <!-- D3.js v7 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- TopoJSON (for map tasks) -->
+  <script src="https://unpkg.com/topojson-client@3"></script>
+</head>
+<body>
+
+  <!-- ========================================================
+       LOADING OVERLAY
+       ======================================================== -->
+  <div id="loading-overlay" class="loading" style="position:fixed;inset:0;z-index:9999;background:var(--color-bg-primary);">
+    <div class="loading__spinner"></div>
+    <span>Đang tải dữ liệu thời tiết...</span>
+  </div>
+
+  <!-- ========================================================
+       APP SHELL
+       ======================================================== -->
+  <div class="app">
+
+    <!-- ---- SIDEBAR ---- -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__section" style="padding-bottom: var(--space-lg); border-bottom: 1px solid var(--color-border);">
+        <div style="display:flex;align-items:center;gap:var(--space-sm);padding:0 var(--space-sm);">
+          <span style="font-size:1.5rem;">🌤️</span>
+          <div>
+            <div style="font-weight:var(--fw-semibold);font-size:var(--fs-md);color:var(--color-text-primary);">Weather VN</div>
+            <div style="font-size:var(--fs-xs);color:var(--color-text-muted);">CSC10108 – Data Viz</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar__section" style="margin-top: var(--space-lg);">
+        <div class="sidebar__section-title">Nhóm biểu đồ</div>
+        <ul class="nav-list" id="nav-list">
+          <!-- Populated by main.js -->
+        </ul>
+      </div>
+    </aside>
+
+    <!-- ---- HEADER ---- -->
+    <header class="header">
+      <div class="header__brand">
+        <h1 class="header__title">Vietnam Weather Dashboard</h1>
+      </div>
+      <div class="header__controls" id="global-controls">
+        <!-- Global filters will be added here by main.js -->
+      </div>
+    </header>
+
+    <!-- ---- MAIN CONTENT ---- -->
+    <main class="main">
+
+      <!-- Summary Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-card__value" id="stat-avg-temp">—</span>
+          <span class="stat-card__label">Nhiệt độ TB</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__value" id="stat-provinces">—</span>
+          <span class="stat-card__label">Tỉnh thành</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__value" id="stat-days">—</span>
+          <span class="stat-card__label">Ngày quan trắc</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__value" id="stat-humidity">—</span>
+          <span class="stat-card__label">Độ ẩm TB</span>
+        </div>
+      </div>
+
+      <!-- ========================================
+           PAGE: TEMPERATURE (Tasks 1-3)
+           ======================================== -->
+      <section id="page-temperature" class="page-section page-section--active">
+        <div class="chart-grid chart-grid--mixed">
+
+          <!-- Task 01 – full width -->
+          <div class="card card--full">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">📈 Task 1 – Nhiệt độ theo thời gian</h3>
+                <p class="card__subtitle">Biến thiên nhiệt độ trung bình theo ngày, nhóm theo vùng</p>
+              </div>
+              <div id="task01-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task01"></div>
+            <div id="task01-legend"></div>
+          </div>
+
+          <!-- Task 02 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">📊 Task 2 – So sánh nhiệt độ vùng</h3>
+                <p class="card__subtitle">Nhiệt độ trung bình / cao nhất / thấp nhất theo vùng</p>
+              </div>
+              <div id="task02-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task02"></div>
+          </div>
+
+          <!-- Task 03 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🕸️ Task 3 – Radar thời tiết vùng</h3>
+                <p class="card__subtitle">So sánh đa chiều: nhiệt độ, gió, mưa, ẩm, UV</p>
+              </div>
+              <div id="task03-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task03"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================
+           PAGE: GEOGRAPHY (Tasks 4-6)
+           ======================================== -->
+      <section id="page-geography" class="page-section">
+        <div class="chart-grid chart-grid--mixed">
+
+          <!-- Task 04 – full width (map) -->
+          <div class="card card--full">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🗺️ Task 4 – Bản đồ nhiệt độ</h3>
+                <p class="card__subtitle">Choropleth map nhiệt độ trung bình theo tỉnh</p>
+              </div>
+              <div id="task04-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task04" style="min-height:500px;"></div>
+          </div>
+
+          <!-- Task 05 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">↔️ Task 5 – Ven biển vs Nội địa</h3>
+                <p class="card__subtitle">So sánh chỉ số thời tiết theo địa hình</p>
+              </div>
+              <div id="task05-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task05"></div>
+          </div>
+
+          <!-- Task 06 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🔵 Task 6 – Mật độ điểm đo</h3>
+                <p class="card__subtitle">Phân bố các trạm quan trắc trên bản đồ</p>
+              </div>
+              <div id="task06-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task06" style="min-height:500px;"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================
+           PAGE: WEATHER (Tasks 7-9)
+           ======================================== -->
+      <section id="page-weather" class="page-section">
+        <div class="chart-grid chart-grid--mixed">
+
+          <!-- Task 07 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🍩 Task 7 – Tần suất thời tiết</h3>
+                <p class="card__subtitle">Phân bố các trạng thái thời tiết</p>
+              </div>
+              <div id="task07-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task07"></div>
+          </div>
+
+          <!-- Task 08 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">📦 Task 8 – Nhiệt độ theo thời tiết</h3>
+                <p class="card__subtitle">Box plot phân bố nhiệt độ theo trạng thái</p>
+              </div>
+              <div id="task08-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task08"></div>
+          </div>
+
+          <!-- Task 09 – full width -->
+          <div class="card card--full">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🟥 Task 9 – Heatmap so sánh vùng</h3>
+                <p class="card__subtitle">Ma trận so sánh đa chỉ số giữa các vùng</p>
+              </div>
+              <div id="task09-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task09"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================
+           PAGE: UV & DAYLIGHT (Tasks 10-12)
+           ======================================== -->
+      <section id="page-uv_daylight" class="page-section">
+        <div class="chart-grid chart-grid--mixed">
+
+          <!-- Task 10 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">⚬ Task 10 – UV vs Nhiệt độ</h3>
+                <p class="card__subtitle">Mối tương quan chỉ số UV và nhiệt độ</p>
+              </div>
+              <div id="task10-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task10"></div>
+          </div>
+
+          <!-- Task 11 -->
+          <div class="card">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">🌅 Task 11 – Độ dài ban ngày</h3>
+                <p class="card__subtitle">Biến thiên thời lượng ban ngày theo vĩ độ</p>
+              </div>
+              <div id="task11-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task11"></div>
+          </div>
+
+          <!-- Task 12 – full width -->
+          <div class="card card--full">
+            <div class="card__header">
+              <div>
+                <h3 class="card__title">☀️ Task 12 – Ban ngày vs UV</h3>
+                <p class="card__subtitle">Ảnh hưởng độ dài ban ngày lên chỉ số UV</p>
+              </div>
+              <div id="task12-controls"></div>
+            </div>
+            <div class="card__body" id="chart-task12"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- App Entry Point -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>

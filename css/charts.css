@@ -1,0 +1,191 @@
+/* ============================================================
+   CHART STYLES – Axes, Tooltips, Legends, D3-specific
+   ============================================================ */
+
+/* --- D3 Axes --- */
+.axis text {
+  font-family: var(--font-primary);
+  font-size: var(--fs-xs);
+  fill: var(--color-text-muted);
+}
+
+.axis line,
+.axis path {
+  stroke: var(--color-border);
+}
+
+.axis-label {
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  fill: var(--color-text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+/* --- Grid Lines --- */
+.grid-line {
+  stroke: var(--color-border-light);
+  stroke-dasharray: 3 3;
+}
+
+/* --- Tooltip --- */
+.chart-tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  max-width: 280px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.chart-tooltip--visible {
+  opacity: 1;
+}
+
+.chart-tooltip__title {
+  font-weight: var(--fw-semibold);
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.chart-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: 2px 0;
+}
+
+.chart-tooltip__label {
+  color: var(--color-text-muted);
+}
+
+.chart-tooltip__value {
+  font-weight: var(--fw-medium);
+  font-family: var(--font-mono);
+}
+
+.chart-tooltip__divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-xs) 0;
+}
+
+.chart-tooltip__color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* --- Legend --- */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+  padding-top: var(--space-sm);
+}
+
+.chart-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--fs-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  user-select: none;
+}
+
+.chart-legend__item:hover {
+  color: var(--color-text-primary);
+}
+
+.chart-legend__item--dimmed {
+  opacity: 0.3;
+}
+
+.chart-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* --- Chart Placeholder (before data loads) --- */
+.chart-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--color-text-muted);
+  gap: var(--space-sm);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+
+.chart-placeholder__icon {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+/* --- Brush / Selection --- */
+.brush .selection {
+  fill: var(--color-accent);
+  fill-opacity: 0.15;
+  stroke: var(--color-accent);
+  stroke-width: 1;
+}
+
+/* --- Chart-specific overrides --- */
+.chart-area .line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-area .area {
+  opacity: 0.15;
+}
+
+.chart-area .dot {
+  cursor: pointer;
+  transition: r var(--transition-fast);
+}
+
+.chart-area .dot:hover {
+  r: 6;
+}
+
+.bar {
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.bar:hover {
+  opacity: 0.8;
+}
+
+/* --- No Data State --- */
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}

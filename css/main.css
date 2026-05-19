@@ -1,0 +1,330 @@
+/* ============================================================
+   DESIGN SYSTEM – CSS Custom Properties & Base Styles
+   ============================================================ */
+
+/* --- Google Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   1. CSS CUSTOM PROPERTIES (Design Tokens)
+   ============================================================ */
+:root {
+  /* --- Color Palette --- */
+  --color-bg-primary:    #0f1117;
+  --color-bg-secondary:  #1a1d27;
+  --color-bg-card:       #1e2130;
+  --color-bg-card-hover: #252840;
+  --color-border:        #2a2d3e;
+  --color-border-light:  #3a3d5066;
+
+  --color-text-primary:   #e8eaf0;
+  --color-text-secondary: #9ca3b8;
+  --color-text-muted:     #6b7394;
+
+  --color-accent:        #6c63ff;
+  --color-accent-light:  #8b83ff;
+  --color-accent-glow:   #6c63ff33;
+
+  /* --- Region Color Palette (consistent across all charts) --- */
+  --color-region-dbsh:       #4fc3f7;  /* Đồng Bằng Sông Hồng */
+  --color-region-tdmnbb:     #81c784;  /* Trung du & Miền núi Bắc Bộ */
+  --color-region-btb-dhmt:   #ffb74d;  /* Bắc Trung Bộ & Duyên hải MT */
+  --color-region-tay-nguyen: #e57373;  /* Tây Nguyên */
+  --color-region-dnb:        #ba68c8;  /* Đông Nam Bộ */
+  --color-region-dbscl:      #4db6ac;  /* Đồng Bằng Sông Cửu Long */
+
+  /* --- Terrain Color Palette --- */
+  --color-terrain-coastal:   #4fc3f7;  /* ven biển */
+  --color-terrain-plain:     #aed581;  /* đồng bằng */
+  --color-terrain-mountain:  #ff8a65;  /* miền núi */
+
+  /* --- Temperature Gradient --- */
+  --color-temp-cold:   #2196f3;
+  --color-temp-warm:   #ff9800;
+  --color-temp-hot:    #f44336;
+
+  /* --- Typography --- */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  --fs-xs:   0.6875rem;   /* 11px */
+  --fs-sm:   0.75rem;     /* 12px */
+  --fs-base: 0.875rem;    /* 14px */
+  --fs-md:   1rem;        /* 16px */
+  --fs-lg:   1.25rem;     /* 20px */
+  --fs-xl:   1.5rem;      /* 24px */
+  --fs-2xl:  2rem;        /* 32px */
+
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* --- Spacing --- */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2rem;
+  --space-2xl: 3rem;
+
+  /* --- Border Radius --- */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-full: 9999px;
+
+  /* --- Shadows --- */
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--color-accent-glow);
+
+  /* --- Transitions --- */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* ============================================================
+   2. CSS RESET & BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--color-accent-light);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ============================================================
+   3. TYPOGRAPHY UTILITIES
+   ============================================================ */
+h1, h2, h3, h4 {
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-xl); }
+h3 { font-size: var(--fs-lg); }
+h4 { font-size: var(--fs-md); }
+
+.text-muted { color: var(--color-text-muted); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-mono { font-family: var(--font-mono); }
+
+/* ============================================================
+   4. CARD COMPONENT
+   ============================================================ */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base);
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.card__title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.card__subtitle {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.card__body {
+  position: relative;
+  min-height: 300px;
+}
+
+/* ============================================================
+   5. BUTTON / CONTROL STYLES
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  background: var(--color-bg-card-hover);
+}
+
+.btn--active {
+  color: var(--color-accent-light);
+  border-color: var(--color-accent);
+  background: var(--color-accent-glow);
+}
+
+/* ============================================================
+   6. SELECT / DROPDOWN
+   ============================================================ */
+.select-wrapper {
+  position: relative;
+}
+
+.select {
+  appearance: none;
+  padding: var(--space-xs) var(--space-xl) var(--space-xs) var(--space-md);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  min-width: 160px;
+}
+
+.select:hover,
+.select:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* ============================================================
+   7. STAT CARD (Summary Metrics)
+   ============================================================ */
+.stat-card {
+  background: linear-gradient(135deg, var(--color-bg-card), var(--color-bg-card-hover));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.stat-card__value {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  font-family: var(--font-mono);
+  background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-card__label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   8. LOADING STATE
+   ============================================================ */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  min-height: 300px;
+  color: var(--color-text-muted);
+}
+
+.loading__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   9. SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}

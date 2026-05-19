@@ -1,0 +1,217 @@
+/* ============================================================
+   LAYOUT – Dashboard Grid, Sidebar, Responsive
+   ============================================================ */
+
+/* --- App Shell --- */
+.app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  min-height: 100vh;
+}
+
+/* --- Header / Top Bar --- */
+.header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.header__logo {
+  font-size: var(--fs-xl);
+}
+
+.header__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  background: linear-gradient(135deg, #fff, var(--color-text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* --- Sidebar / Navigation --- */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  padding: var(--space-lg) 0;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar__section {
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.sidebar__section-title {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-sm);
+  padding: 0 var(--space-sm);
+}
+
+.nav-list {
+  list-style: none;
+}
+
+.nav-item {
+  margin-bottom: 2px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-primary);
+}
+
+.nav-link:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+}
+
+.nav-link--active {
+  color: var(--color-accent-light);
+  background: var(--color-accent-glow);
+  font-weight: var(--fw-medium);
+}
+
+.nav-link__icon {
+  font-size: var(--fs-md);
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-link__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-link__badge {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  background: var(--color-bg-primary);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+/* --- Main Content Area --- */
+.main {
+  grid-area: main;
+  padding: var(--space-xl);
+  overflow-y: auto;
+}
+
+/* --- Stats Row --- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+/* --- Chart Grid --- */
+.chart-grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.chart-grid--2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.chart-grid--1col {
+  grid-template-columns: 1fr;
+}
+
+.chart-grid--mixed {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.chart-grid--mixed .card--full {
+  grid-column: 1 / -1;
+}
+
+/* --- Page Section --- */
+.page-section {
+  display: none;
+}
+
+.page-section--active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+  .chart-grid--2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main";
+  }
+
+  .sidebar {
+    display: none; /* TODO: hamburger menu for mobile */
+  }
+
+  .main {
+    padding: var(--space-md);
+  }
+}
