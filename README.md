@@ -88,13 +88,13 @@ cd weather-visualization
 
 ### 2. Download the dataset
 
-Download `df_weather_fixed_utf8.csv` from the shared drive / Kaggle and place it in:
+Download `df_weather_cleaned_final.csv` from the shared drive / Kaggle and place it in:
 
 ```
-datasets/df_weather_fixed_utf8.csv
+datasets/df_weather_cleaned_final.csv
 ```
 
-> ⚠️ The CSV is **not tracked by git** (it's ~4 MB). Each team member downloads it separately.
+> ⚠️ The CSV is **not tracked by git** (it's ~7 MB). Each team member downloads it separately.
 
 ### 3. Start a local server
 
@@ -116,9 +116,9 @@ Navigate to [http://localhost:8000](http://localhost:8000) in your browser.
 
 | Property | Value |
 |---|---|
-| **File** | `df_weather_fixed_utf8.csv` |
-| **Source** | Kaggle – Weather API dataset (Vietnamese localization) |
-| **Records** | ~26,018 rows |
+| **File** | `df_weather_cleaned_final.csv` |
+| **Source** | Kaggle – Weather API dataset (Vietnamese localization, cleaned) |
+| **Records** | ~25,831 rows |
 | **Provinces** | 63 |
 | **Regions** | 6 (ĐBSH, TD&MNBB, BTB&DHMT, Tây Nguyên, ĐNB, ĐBSCL) |
 | **Terrain types** | 3 (ven biển, đồng bằng, miền núi) |

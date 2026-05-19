@@ -6,7 +6,7 @@
  *   const data = await loadWeatherData();
  */
 
-const DATA_PATH = './datasets/df_weather_fixed_utf8.csv';
+const DATA_PATH = './datasets/df_weather_cleaned_final.csv';
 
 /** @type {Array|null} Cached parsed data */
 let _cachedData = null;
@@ -26,7 +26,6 @@ export async function loadWeatherData() {
     name:     d['location.name'],
     region:   d['location.region'],
     terrain:  d['location.terrain'],
-    country:  d['location.country'],
     lat:      +d['location.lat'],
     lon:      +d['location.lon'],
 
