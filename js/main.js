@@ -21,6 +21,7 @@ import * as task10 from './charts/task10-scatterChart.js';
 import * as task11 from './charts/task11-areaChart.js';
 import * as task12 from './charts/task12-scatterChart2.js';
 import * as task13 from './charts/task13-uvHeatmap.js';
+import * as task14 from './charts/task14-heatRiskMap.js';
 
 /* ============================================================
    PAGE DEFINITIONS
@@ -34,6 +35,7 @@ const PAGES = {
       { id: 'task01', module: task01, title: 'Nhiệt độ theo thời gian' },
       { id: 'task02', module: task02, title: 'So sánh nhiệt độ vùng' },
       { id: 'task03', module: task03, title: 'Phân tích thời tiết vùng' },
+      
     ],
   },
   geography: {
@@ -43,6 +45,7 @@ const PAGES = {
       { id: 'task04', module: task04, title: 'Bản đồ nhiệt độ' },
       { id: 'task05', module: task05, title: 'Ven biển vs Nội địa' },
       { id: 'task06', module: task06, title: 'Mật độ điểm đo' },
+      { id: 'task14', module: task14, title: 'Nguy cơ nắng nóng theo tỉnh' },
     ],
   },
   weather: {
