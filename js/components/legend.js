@@ -20,9 +20,14 @@ export class Legend {
    * Render legend items
    * @param {Array<{label: string, color: string, key: string}>} items
    * @param {Function} onToggle - callback(key, isActive) when item is clicked
+   * @param {Array<string>} initialActive - optional array of keys to start active
    */
-  render(items, onToggle = null) {
-    this.activeItems = new Set(items.map(i => i.key));
+  render(items, onToggle = null, initialActive = null) {
+    if (initialActive !== null) {
+      this.activeItems = new Set(initialActive);
+    } else {
+      this.activeItems = new Set(items.map(i => i.key));
+    }
 
     const legend = this.container
       .selectAll('.chart-legend')
