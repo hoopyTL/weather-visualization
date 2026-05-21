@@ -21,7 +21,7 @@
  *   loadWeatherData                           from '../dataLoader.js'
  */
 
-import { REGION_COLORS, REGION_SHORT, regionColor } from '../utils.js';
+import { REGION_COLORS, REGION_SHORT, regionColor, sanitizeKey } from '../utils.js';
 import { Tooltip } from '../components/tooltip.js';
 import { Legend } from '../components/legend.js';
 import { loadWeatherData } from '../dataLoader.js';
@@ -74,7 +74,7 @@ export function render(data, filters = {}) {
   _drawLegend(series);
   _buildStatCards(series);
   _applyVisibilityTransition(_activeKeys); // Set trạng thái khởi tạo
-  
+
   // Attach National Only button listener
   const btnNat = document.getElementById('btn-national-t11');
   if (btnNat) {
@@ -284,7 +284,7 @@ function _drawChart(series, nationalSeries) {
   series.forEach(s => {
     const color = regionColor(s.region);
     const groupEl = seriesG.append('g')
-      .attr('class', `series series--${_sanitizeKey(s.region)}`)
+      .attr('class', `series series--${sanitizeKey(s.region)}`)
       .attr('data-region', s.region);
 
     // Confidence band (min–max range)
@@ -329,7 +329,7 @@ function _drawChart(series, nationalSeries) {
   });
 
   // ── Animate Line Drawing on Load ─────────────────────────
-  g.selectAll('.national-line, .series__line').each(function() {
+  g.selectAll('.national-line, .series__line').each(function () {
     const length = this.getTotalLength();
     if (length > 0) {
       d3.select(this)
@@ -458,11 +458,11 @@ function _drawLegend(series, activeKeys) {
   }));
 
   _legend.render(
-    items, 
+    items,
     (key, isActive, activeSet) => {
       _activeKeys = activeSet;
       _applyVisibilityTransition(activeSet);
-    }, 
+    },
     activeKeys !== undefined ? Array.from(activeKeys) : null,
     (key, isHovering) => {
       _applyHoverTransition(key, isHovering);
@@ -486,7 +486,7 @@ function _applyHoverTransition(hoveredKey, isHovering) {
   d3.selectAll('.series').each(function () {
     const region = d3.select(this).attr('data-region');
     const isHoveredRegion = region === hoveredKey;
-    
+
     if (!_activeKeys.has(region)) return;
 
     d3.select(this).select('.series__line')
@@ -620,21 +620,4 @@ function _buildStatCards(series) {
   } else {
     cardBody.parentNode?.appendChild(statsEl);
   }
-}
-
-/* ─── Helpers ───────────────────────────────────────────── */
-
-/** Sanitize region name for use as CSS class */
-function _sanitizeKey(str) {
-  return str
-    .toLowerCase()
-    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
-    .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
-    .replace(/[ìíịỉĩ]/g, 'i')
-    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
-    .replace(/[ùúụủũưừứựửữ]/g, 'u')
-    .replace(/[ỳýỵỷỹ]/g, 'y')
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
