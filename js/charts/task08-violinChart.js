@@ -44,7 +44,7 @@ const getBoxStats = (data) =>
 
 export function init() {
   margin = { ...getMargin("md"), bottom: 145, right: 15 };
-  dims = getDimensions(CONTAINER, margin); // Thay CONTAINER bằng selector của bạn
+  dims = getDimensions(CONTAINER, margin);
 
   svg = createSvg(CONTAINER, dims.width, dims.height, margin);
   tooltip = new Tooltip();
@@ -71,7 +71,7 @@ export function init() {
 
 export function render(data, options = {}) {
   // Lấy dữ liệu và tính toán
-  const stats = getBoxStats(filterData(options.filters)); // Đảm bảo bạn có hàm filterData
+  const stats = getBoxStats(filterData(options.filters));
   if (!stats.length) return;
 
   // Cập nhật Domain cho Scale
