@@ -21,35 +21,34 @@ export function init() {
   console.log("📊 Task 08 – Box Plot initialized");
 }
 
-// Giả sử bạn đã import Tooltip class vào file này
-// import { Tooltip } from './path-to-tooltip';
-
 export function render(data, options = {}) {
-  // 1. Dọn dẹp bản vẽ cũ
-  const container = d3.select(CONTAINER);
-  container.selectAll("*").remove();
-
-  let filteredData = filterData(options.filters);
-
-  // 2. Thiết lập không gian
-  const margin = { top: 30, right: 30, bottom: 135, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 400 - margin.top - margin.bottom;
-
-  const svg = container
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+  // ==========================================
+  // 1. DỮ LIỆU & LỌC RÁC
+  // ==========================================
+  // Lọc bỏ các trạng thái thời tiết rỗng/undefined gây ra khoảng trắng bên trái
+  const filteredData = filterData(options.filters);
 
   // ==========================================
-  // KHỞI TẠO TOOLTIP TỪ CLASS CỦA BẠN
+  // 2. KHÔNG GIAN & SVG (Dùng Utils)
   // ==========================================
+  // Lấy margin chuẩn 'md' và ghi đè bottom/right
+  const margin = {
+    ...getMargin("md"),
+    bottom: 145, // Chứa chữ nghiêng
+    right: 15, // Tận dụng mép phải
+  };
+
+  // Lấy kích thước động từ utils
+  const dims = getDimensions(CONTAINER, margin);
+
+  // Tạo SVG siêu gọn bằng utils
+  const svg = createSvg(CONTAINER, dims.width, dims.height, margin);
+
+  // Khởi tạo Tooltip
   const tooltip = new Tooltip();
 
   // ==========================================
-  // TÍNH TOÁN THỐNG KÊ
+  // 3. TÍNH TOÁN THỐNG KÊ
   // ==========================================
   const sumstat = Array.from(
     d3.group(filteredData, (d) => d.condition),
@@ -66,13 +65,16 @@ export function render(data, options = {}) {
     },
   );
 
+  // Nếu không có dữ liệu sau khi lọc, dừng vẽ
+  if (sumstat.length === 0) return;
+
   // ==========================================
-  // THIẾT LẬP SCALES VÀ TRỤC
+  // 4. SCALES VÀ TRỤC
   // ==========================================
   const x = d3
     .scaleBand()
     .domain(sumstat.map((d) => d.key))
-    .range([0, width])
+    .range([0, dims.innerWidth]) // Dùng innerWidth từ utils
     .padding(0.3);
 
   const y = d3
@@ -81,12 +83,12 @@ export function render(data, options = {}) {
       d3.min(sumstat, (d) => d.min) - 3,
       d3.max(sumstat, (d) => d.max) + 3,
     ])
-    .range([height, 0]);
+    .range([dims.innerHeight, 0]); // Dùng innerHeight từ utils
 
-  // Trục X
+  // Vẽ trục X
   svg
     .append("g")
-    .attr("transform", `translate(0, ${height})`)
+    .attr("transform", `translate(0, ${dims.innerHeight})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
     .style("font-size", "12px")
@@ -96,7 +98,7 @@ export function render(data, options = {}) {
     .attr("dx", "-0.5em")
     .attr("dy", "0.2em");
 
-  // Trục Y
+  // Vẽ trục Y
   svg
     .append("g")
     .call(d3.axisLeft(y))
@@ -104,14 +106,14 @@ export function render(data, options = {}) {
     .style("font-size", "12px")
     .style("fill", "#333");
 
-  // Đổi màu đường trục sang màu tối
+  // Trục tối màu
   svg.selectAll(".domain, .tick line").attr("stroke", "#333");
 
   // ==========================================
-  // VẼ BOX PLOT (Groups)
+  // 5. VẼ BOX PLOT
   // ==========================================
-  const boxWidth = x.bandwidth() > 50 ? 50 : x.bandwidth();
-  let activeBox = null; // Lưu trạng thái click (isolate)
+  const boxWidth = Math.min(x.bandwidth(), 50); // Viết gọn lại hàm if
+  let activeBox = null;
 
   const boxGroups = svg
     .selectAll(".boxGroup")
@@ -123,18 +125,16 @@ export function render(data, options = {}) {
     .style("cursor", "pointer")
     .style("transition", "opacity 0.3s ease");
 
-  // 1. Râu
+  // Râu
   boxGroups
     .append("line")
-    .attr("x1", 0)
-    .attr("x2", 0)
     .attr("y1", (d) => y(d.min))
     .attr("y2", (d) => y(d.max))
     .attr("stroke", "#333333")
     .style("stroke-width", 1.5)
     .style("stroke-dasharray", "4,4");
 
-  // 2. Hộp
+  // Hộp
   boxGroups
     .append("rect")
     .attr("x", -boxWidth / 2)
@@ -146,7 +146,7 @@ export function render(data, options = {}) {
     .style("fill", "#69b3a2")
     .style("opacity", 0.9);
 
-  // 3. Đường Trung vị
+  // Trung vị
   boxGroups
     .append("line")
     .attr("x1", -boxWidth / 2)
@@ -157,59 +157,42 @@ export function render(data, options = {}) {
     .style("stroke-width", 2.5);
 
   // ==========================================
-  // GẮN SỰ KIỆN TƯƠNG TÁC CÙNG CLASS TOOLTIP
+  // 6. INTERACTION & TOOLTIP (Dùng formatTemp)
   // ==========================================
-
-  // Hàm helper để render HTML cho tooltip dựa trên data `d`
   const getTooltipHtml = (d) => {
     return Tooltip.buildHTML(d.key, [
-      { label: "Max", value: `${d.max.toFixed(1)}°C` },
-      { label: "Q3", value: `${d.q3.toFixed(1)}°C` },
-      { label: "Median", value: `${d.median.toFixed(1)}°C` },
-      { label: "Q1", value: `${d.q1.toFixed(1)}°C` },
-      { label: "Min", value: `${d.min.toFixed(1)}°C` },
+      { label: "Max", value: formatTemp(d.max) },
+      { label: "Q3", value: formatTemp(d.q3) },
+      { label: "Median", value: formatTemp(d.median) },
+      { label: "Q1", value: formatTemp(d.q1) },
+      { label: "Min", value: formatTemp(d.min) },
     ]);
   };
 
   boxGroups
     .on("mouseover", function (event, d) {
-      // Highlight logic
       if (!activeBox) {
         boxGroups.style("opacity", 0.3);
         d3.select(this).style("opacity", 1);
       }
-
-      // Hiển thị tooltip
       tooltip.show(event, getTooltipHtml(d));
     })
-    .on("mousemove", function (event, d) {
-      // Cập nhật vị trí tooltip khi di chuyển chuột (class của bạn cần gọi show lại để update X/Y)
-      tooltip.show(event, getTooltipHtml(d));
-    })
-    .on("mouseleave", function (event, d) {
-      // Ẩn tooltip
+    .on("mousemove", (event, d) => tooltip.show(event, getTooltipHtml(d)))
+    .on("mouseleave", () => {
       tooltip.hide();
-
-      // Reset Highlight logic
-      if (!activeBox) {
-        boxGroups.style("opacity", 1);
-      } else {
-        boxGroups.style("opacity", (g) => (g.key === activeBox ? 1 : 0.15));
-      }
+      boxGroups.style("opacity", (g) =>
+        !activeBox || g.key === activeBox ? 1 : 0.15,
+      );
     })
-    .on("click", function (event, d) {
-      // Isolate logic
-      if (activeBox === d.key) {
-        activeBox = null;
-        boxGroups.style("opacity", 1);
-      } else {
-        activeBox = d.key;
-        boxGroups.style("opacity", (g) => (g.key === activeBox ? 1 : 0.15));
-      }
+    .on("click", (event, d) => {
+      activeBox = activeBox === d.key ? null : d.key;
+      boxGroups.style("opacity", (g) =>
+        !activeBox || g.key === activeBox ? 1 : 0.15,
+      );
     });
 
-  // Reset Isolate khi bấm ra ngoài nền
-  svg.on("click", function (event) {
+  // Reset Isolate khi bấm vào nền SVG
+  svg.on("click", (event) => {
     if (event.target.tagName === "svg") {
       activeBox = null;
       boxGroups.style("opacity", 1);
