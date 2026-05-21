@@ -12,190 +12,204 @@ import { createSvg, getMargin, getDimensions, formatTemp } from "../utils.js";
 import { Tooltip } from "../components/tooltip.js";
 import { filterData } from "../dataLoader.js";
 
-// Nếu dự án của bạn dùng NPM, bạn import d3 như sau:
-// import * as d3 from "d3";
-
 const CONTAINER = "#chart-task08";
 
-export function init() {
-  console.log("📊 Task 08 – Box Plot initialized");
-}
+// ==========================================
+// BIẾN TOÀN CỤC CỦA CHART
+// ==========================================
+let svg, xAxisGroup, yAxisGroup, boxesGroup, tooltip;
+let dims, margin;
+let x, y;
+let activeBox = null; // Phải để ngoài này để giữ trạng thái Isolate khi render lại
 
-export function render(data, options = {}) {
-  // ==========================================
-  // 1. DỮ LIỆU & LỌC RÁC
-  // ==========================================
-  // Lọc bỏ các trạng thái thời tiết rỗng/undefined gây ra khoảng trắng bên trái
-  const filteredData = filterData(options.filters);
-
-  // ==========================================
-  // 2. KHÔNG GIAN & SVG (Dùng Utils)
-  // ==========================================
-  // Lấy margin chuẩn 'md' và ghi đè bottom/right
-  const margin = {
-    ...getMargin("md"),
-    bottom: 145, // Chứa chữ nghiêng
-    right: 15, // Tận dụng mép phải
-  };
-
-  // Lấy kích thước động từ utils
-  const dims = getDimensions(CONTAINER, margin);
-
-  // Tạo SVG siêu gọn bằng utils
-  const svg = createSvg(CONTAINER, dims.width, dims.height, margin);
-
-  // Khởi tạo Tooltip
-  const tooltip = new Tooltip();
-
-  // ==========================================
-  // 3. TÍNH TOÁN THỐNG KÊ
-  // ==========================================
-  const sumstat = Array.from(
-    d3.group(filteredData, (d) => d.condition),
-    ([key, values]) => {
-      const sortedTemp = values.map((d) => d.avgTemp).sort(d3.ascending);
+// Hàm tính toán thống kê (Min, Max, Q1, Q3, Median)
+const getBoxStats = (data) =>
+  Array.from(
+    d3.group(
+      data.filter((d) => d.condition && d.condition.trim() !== ""),
+      (d) => d.condition,
+    ),
+    ([key, vals]) => {
+      const t = vals.map((d) => d.avgTemp).sort(d3.ascending);
       return {
-        key: key,
-        q1: d3.quantile(sortedTemp, 0.25),
-        median: d3.quantile(sortedTemp, 0.5),
-        q3: d3.quantile(sortedTemp, 0.75),
-        min: sortedTemp[0],
-        max: sortedTemp[sortedTemp.length - 1],
+        key,
+        min: t[0],
+        max: t.at(-1),
+        q1: d3.quantile(t, 0.25),
+        median: d3.quantile(t, 0.5),
+        q3: d3.quantile(t, 0.75),
       };
     },
   );
 
-  // Nếu không có dữ liệu sau khi lọc, dừng vẽ
-  if (sumstat.length === 0) return;
+export function init() {
+  margin = { ...getMargin("md"), bottom: 145, right: 15 };
+  dims = getDimensions(CONTAINER, margin); // Thay CONTAINER bằng selector của bạn
 
-  // ==========================================
-  // 4. SCALES VÀ TRỤC
-  // ==========================================
-  const x = d3
-    .scaleBand()
-    .domain(sumstat.map((d) => d.key))
-    .range([0, dims.innerWidth]) // Dùng innerWidth từ utils
-    .padding(0.3);
+  svg = createSvg(CONTAINER, dims.width, dims.height, margin);
+  tooltip = new Tooltip();
 
-  const y = d3
-    .scaleLinear()
-    .domain([
-      d3.min(sumstat, (d) => d.min) - 3,
-      d3.max(sumstat, (d) => d.max) + 3,
-    ])
-    .range([dims.innerHeight, 0]); // Dùng innerHeight từ utils
-
-  // Vẽ trục X
-  svg
+  // Tạo sẵn các thẻ Group (g)
+  xAxisGroup = svg
     .append("g")
-    .attr("transform", `translate(0, ${dims.innerHeight})`)
+    .attr("transform", `translate(0, ${dims.innerHeight})`);
+  yAxisGroup = svg.append("g");
+  boxesGroup = svg.append("g").attr("class", "all-boxes");
+
+  // Khởi tạo Scale
+  x = d3.scaleBand().range([0, dims.innerWidth]).padding(0.3);
+  y = d3.scaleLinear().range([dims.innerHeight, 0]);
+
+  // Click ra ngoài nền thì reset Isolate
+  svg.on("click", (event) => {
+    if (event.target.tagName === "svg") {
+      activeBox = null;
+      boxesGroup.selectAll(".boxGroup").style("opacity", 1);
+    }
+  });
+}
+
+export function render(data, options = {}) {
+  // Lấy dữ liệu và tính toán
+  const stats = getBoxStats(filterData(options.filters)); // Đảm bảo bạn có hàm filterData
+  if (!stats.length) return;
+
+  // Cập nhật Domain cho Scale
+  x.domain(stats.map((d) => d.key));
+  y.domain([d3.min(stats, (d) => d.min) - 3, d3.max(stats, (d) => d.max) + 3]);
+
+  // Cập nhật trục X, Y với transition mượt
+  xAxisGroup
+    .transition()
+    .duration(500)
     .call(d3.axisBottom(x))
     .selectAll("text")
     .style("font-size", "12px")
     .style("fill", "#333")
     .attr("transform", "rotate(-45)")
     .style("text-anchor", "end")
-    .attr("dx", "-0.5em")
-    .attr("dy", "0.2em");
+    .attr("dx", "-0.5em");
 
-  // Vẽ trục Y
-  svg
-    .append("g")
+  yAxisGroup
+    .transition()
+    .duration(500)
     .call(d3.axisLeft(y))
     .selectAll("text")
     .style("font-size", "12px")
     .style("fill", "#333");
 
-  // Trục tối màu
-  svg.selectAll(".domain, .tick line").attr("stroke", "#333");
+  svg.selectAll(".domain, .tick line").attr("stroke", "#333"); // Đổi màu trục
 
-  // ==========================================
-  // 5. VẼ BOX PLOT
-  // ==========================================
-  const boxWidth = Math.min(x.bandwidth(), 50); // Viết gọn lại hàm if
-  let activeBox = null;
+  // Vẽ các Hộp Boxplot bằng .join()
+  const boxW = Math.min(x.bandwidth(), 50);
 
-  const boxGroups = svg
+  const groups = boxesGroup
     .selectAll(".boxGroup")
-    .data(sumstat)
-    .enter()
-    .append("g")
-    .attr("class", "boxGroup")
-    .attr("transform", (d) => `translate(${x(d.key) + x.bandwidth() / 2}, 0)`)
-    .style("cursor", "pointer")
-    .style("transition", "opacity 0.3s ease");
+    .data(stats, (d) => d.key)
+    .join(
+      (enter) => {
+        const g = enter
+          .append("g")
+          .attr("class", "boxGroup")
+          .style("cursor", "pointer")
+          .attr(
+            "transform",
+            (d) => `translate(${x(d.key) + x.bandwidth() / 2}, 0)`,
+          );
 
-  // Râu
-  boxGroups
-    .append("line")
+        // VẼ RÂU (Whisker) - Sửa màu #333
+        g.append("line")
+          .attr("class", "whisker")
+          .attr("stroke", "#333333")
+          .style("stroke-width", 1.5)
+          .style("stroke-dasharray", "4,4");
+
+        // VẼ HỘP (Box) - Sửa màu #333
+        g.append("rect")
+          .attr("class", "box")
+          .attr("stroke", "#333333")
+          .style("stroke-width", 1.5)
+          .style("fill", "#69b3a2");
+
+        // VẼ TRUNG VỊ (Median) - Sửa màu #333
+        g.append("line")
+          .attr("class", "median")
+          .attr("stroke", "#333333")
+          .style("stroke-width", 2.5);
+
+        return g;
+      },
+      (update) => update,
+      (exit) => exit.remove(),
+    );
+
+  // Hiệu ứng di chuyển (Transition) cho tất cả các thành phần
+  groups
+    .transition()
+    .duration(500)
+    .attr("transform", (d) => `translate(${x(d.key) + x.bandwidth() / 2}, 0)`);
+
+  groups
+    .select(".whisker")
+    .transition()
+    .duration(500)
+    .attr("x1", 0)
+    .attr("x2", 0) // Quan trọng: Đặt toạ độ X cho râu
     .attr("y1", (d) => y(d.min))
-    .attr("y2", (d) => y(d.max))
-    .attr("stroke", "#333333")
-    .style("stroke-width", 1.5)
-    .style("stroke-dasharray", "4,4");
+    .attr("y2", (d) => y(d.max));
 
-  // Hộp
-  boxGroups
-    .append("rect")
-    .attr("x", -boxWidth / 2)
+  groups
+    .select(".box")
+    .transition()
+    .duration(500)
+    .attr("x", -boxW / 2)
     .attr("y", (d) => y(d.q3))
-    .attr("height", (d) => y(d.q1) - y(d.q3))
-    .attr("width", boxWidth)
-    .attr("stroke", "#333333")
-    .attr("stroke-width", 1.5)
-    .style("fill", "#69b3a2")
-    .style("opacity", 0.9);
+    .attr("width", boxW)
+    .attr("height", (d) => Math.max(0, y(d.q1) - y(d.q3))); // Tránh lỗi chiều cao âm
 
-  // Trung vị
-  boxGroups
-    .append("line")
-    .attr("x1", -boxWidth / 2)
-    .attr("x2", boxWidth / 2)
+  groups
+    .select(".median")
+    .transition()
+    .duration(500)
+    .attr("x1", -boxW / 2)
+    .attr("x2", boxW / 2)
     .attr("y1", (d) => y(d.median))
-    .attr("y2", (d) => y(d.median))
-    .attr("stroke", "#333333")
-    .style("stroke-width", 2.5);
+    .attr("y2", (d) => y(d.median));
 
   // ==========================================
-  // 6. INTERACTION & TOOLTIP (Dùng formatTemp)
+  // GẮN LẠI SỰ KIỆN TƯƠNG TÁC
   // ==========================================
-  const getTooltipHtml = (d) => {
-    return Tooltip.buildHTML(d.key, [
+  const getTooltipHtml = (d) =>
+    Tooltip.buildHTML(d.key, [
       { label: "Max", value: formatTemp(d.max) },
       { label: "Q3", value: formatTemp(d.q3) },
       { label: "Median", value: formatTemp(d.median) },
       { label: "Q1", value: formatTemp(d.q1) },
       { label: "Min", value: formatTemp(d.min) },
     ]);
-  };
 
-  boxGroups
+  groups
     .on("mouseover", function (event, d) {
       if (!activeBox) {
-        boxGroups.style("opacity", 0.3);
+        groups.style("opacity", 0.3);
         d3.select(this).style("opacity", 1);
       }
       tooltip.show(event, getTooltipHtml(d));
     })
-    .on("mousemove", (event, d) => tooltip.show(event, getTooltipHtml(d)))
+    .on("mousemove", (event, d) => {
+      tooltip.show(event, getTooltipHtml(d));
+    })
     .on("mouseleave", () => {
       tooltip.hide();
-      boxGroups.style("opacity", (g) =>
+      groups.style("opacity", (g) =>
         !activeBox || g.key === activeBox ? 1 : 0.15,
       );
     })
     .on("click", (event, d) => {
+      event.stopPropagation(); // Ngăn sự kiện click truyền ra SVG nền
       activeBox = activeBox === d.key ? null : d.key;
-      boxGroups.style("opacity", (g) =>
+      groups.style("opacity", (g) =>
         !activeBox || g.key === activeBox ? 1 : 0.15,
       );
     });
-
-  // Reset Isolate khi bấm vào nền SVG
-  svg.on("click", (event) => {
-    if (event.target.tagName === "svg") {
-      activeBox = null;
-      boxGroups.style("opacity", 1);
-    }
-  });
 }
