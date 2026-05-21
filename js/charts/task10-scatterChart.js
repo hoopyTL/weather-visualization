@@ -162,7 +162,17 @@ export function init() {
 
 export function render(data, options = {}) {
   try {
-    const filteredData = filterData(options.filters);
+    let rawData = filterData(options.filters);
+
+    let filteredData = rawData.filter(
+      (d) =>
+        d &&
+        d.region &&
+        d.avgTemp != null &&
+        !isNaN(d.avgTemp) &&
+        d.uv != null &&
+        !isNaN(d.uv),
+    );
 
     if (!filteredData.length) return;
 
@@ -170,6 +180,7 @@ export function render(data, options = {}) {
       activeRegion = options.filters.region || null;
     }
 
+    // Cập nhật Domain cho Trục (Tính toán trên 100% dữ liệu)
     xScale.domain([0, d3.max(filteredData, (d) => d.avgTemp)]).nice();
     yScale.domain([0, d3.max(filteredData, (d) => d.uv)]).nice();
 
@@ -195,43 +206,28 @@ export function render(data, options = {}) {
           enter
             .append("circle")
             .attr("class", (d) => `dot dot-${sanitizeKey(d.region)}`)
-            .attr("r", 0)
+            .attr("r", 5)
             .attr("cx", (d) => xScale(d.avgTemp))
-            .attr("cy", dims.innerHeight)
+            .attr("cy", (d) => yScale(d.uv))
             .style("fill", (d) => regionColor(d.region))
-            .style("opacity", 0),
-        (update) => update,
-        (exit) =>
-          exit
-            .transition()
-            .duration(300)
-            .attr("r", 0)
-            .style("opacity", 0)
-            .remove(),
+            .style("opacity", 0.7)
+            .attr("shape-rendering", "optimizeSpeed"),
+        (update) =>
+          update
+            .attr("cx", (d) => xScale(d.avgTemp))
+            .attr("cy", (d) => yScale(d.uv)),
+        (exit) => exit.remove(),
       );
 
-    dots
-      .transition()
-      .duration(500)
-      .attr("cx", (d) => xScale(d.avgTemp))
-      .attr("cy", (d) => yScale(d.uv))
-      .attr("r", 5);
-
-    // ---------------------------------------------------------
-    // HÀM XỬ LÝ TƯƠNG TÁC (ẨN HOÀN TOÀN KHI FILTER)
-    // ---------------------------------------------------------
     function updateHighlightAndTrend() {
-      // 1. Chỉnh con trỏ chuột: Nếu điểm bị ẩn thì không cho tương tác hover nữa
       dotsGroup
         .selectAll(".dot")
         .style("pointer-events", (d) =>
           !activeRegion || d.region === activeRegion ? "all" : "none",
         )
-        .transition()
-        .duration(400)
         .style("opacity", (d) => {
           if (!activeRegion) return 0.7;
-          return d.region === activeRegion ? 0.9 : 0;
+          return d.region === activeRegion ? 0.9 : 0; // Tàng hình hoàn toàn
         })
         .attr("r", (d) => (activeRegion && d.region === activeRegion ? 6 : 5));
 
@@ -281,13 +277,12 @@ export function render(data, options = {}) {
     updateHighlightAndTrend();
 
     // ---------------------------------------------------------
-    // GẮN SỰ KIỆN TƯƠNG TÁC LẠI
+    // GẮN SỰ KIỆN TƯƠNG TÁC
     // ---------------------------------------------------------
     legendGroup
       .selectAll(".legend-item")
       .on("mouseover", function (event, region) {
         if (activeRegion === region) return;
-        // Chỉ hiện vùng hover, các vùng khác cho về 0
         dotsGroup
           .selectAll(".dot")
           .style("opacity", (d) => (d.region === region ? 0.9 : 0));
@@ -304,9 +299,8 @@ export function render(data, options = {}) {
     dots
       .on("mouseover", function (event, d) {
         dotsGroup.selectAll(".dot").style("opacity", (p) => {
-          // Giữ nguyên trạng thái tàng hình của các điểm bị filter
           if (activeRegion && p.region !== activeRegion) return 0;
-          return 0.15; // Các điểm không hover thì mờ đi một chút (để tôn điểm hover lên)
+          return 0.15; // Mờ đi tức thì
         });
         d3.select(this)
           .raise()
