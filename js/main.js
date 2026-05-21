@@ -18,9 +18,9 @@ import * as task07 from './charts/task07-donutChart.js';
 import * as task08 from './charts/task08-violinChart.js';
 import * as task09 from './charts/task09-heatmapChart.js';
 import * as task10 from './charts/task10-scatterChart.js';
-import * as task11 from './charts/task11-areaChart.js';
-import * as task12 from './charts/task12-scatterChart2.js';
-import * as task13 from './charts/task13-uvHeatmap.js';
+import * as task11 from './charts/task11-multiLineChart.js';
+import * as task12 from './charts/task12-bubbleScatter.js';
+import * as task13 from './charts/task13-uvChoropleth.js';
 import * as task14 from './charts/task14-heatRiskMap.js';
 
 /* ============================================================
@@ -64,7 +64,7 @@ const PAGES = {
       { id: 'task10', module: task10, title: 'UV vs Nhiệt độ' },
       { id: 'task11', module: task11, title: 'Độ dài ban ngày' },
       { id: 'task12', module: task12, title: 'Ban ngày vs UV' },
-      { id: 'task13', module: task13, title: 'UV cao nhất trong năm' },
+      { id: 'task13', module: task13, title: 'Bản đồ phân bố UV' },
     ],
   },
 };

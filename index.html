@@ -239,7 +239,7 @@
         <div class="chart-grid chart-grid--mixed">
 
           <!-- Task 10 -->
-          <div class="card">
+          <div class="card card--full">
             <div class="card__header">
               <div>
                 <h3 class="card__title">⚬ Task 10 – UV vs Nhiệt độ</h3>
@@ -251,13 +251,17 @@
           </div>
 
           <!-- Task 11 -->
-          <div class="card">
+          <div class="card card--full">
             <div class="card__header">
               <div>
                 <h3 class="card__title">🌅 Task 11 – Độ dài ban ngày</h3>
                 <p class="card__subtitle">Biến thiên thời lượng ban ngày theo vĩ độ</p>
               </div>
-              <div id="task11-controls"></div>
+              <div id="task11-controls" style="display:flex; gap:12px; align-items:center;">
+                <button id="btn-national-t11" style="background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);border-radius:20px;padding:6px 16px;cursor:pointer;font-family:var(--font-primary);font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;transition:0.2s;">
+                  Chỉ xem Toàn quốc
+                </button>
+              </div>
             </div>
             <div class="card__body" id="chart-task11"></div>
           </div>
@@ -267,7 +271,7 @@
             <div class="card__header">
               <div>
                 <h3 class="card__title">☀️ Task 12 – Ban ngày vs UV</h3>
-                <p class="card__subtitle">Ảnh hưởng độ dài ban ngày lên chỉ số UV</p>
+                <p class="card__subtitle">Mối quan hệ giữa độ dài ban ngày và chỉ số UV</p>
               </div>
               <div id="task12-controls"></div>
             </div>
@@ -278,8 +282,8 @@
           <div class="card card--full">
             <div class="card__header">
               <div>
-                <h3 class="card__title">🔥 Task 13 – UV cao nhất trong năm</h3>
-                <p class="card__subtitle">Thời điểm UV cao nhất (Heatmap Tháng × Vùng)</p>
+                <h3 class="card__title">🗺️ Task 13 – Bản đồ phân bố UV</h3>
+                <p class="card__subtitle">Sự thay đổi phân bố UV theo không gian và thời gian</p>
               </div>
               <div id="task13-controls"></div>
             </div>

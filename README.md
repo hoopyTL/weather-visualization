@@ -58,8 +58,9 @@ weather-visualization/
 │   │   ├── task08-violinChart.js
 │   │   ├── task09-heatmapChart.js
 │   │   ├── task10-scatterChart.js
-│   │   ├── task11-areaChart.js
-│   │   └── task12-scatterChart2.js
+│   │   ├── task11-multiLineChart.js
+│   │   ├── task12-bubbleScatter.js
+│   │   └── task13-uvChoropleth.js
 │   └── components/             # Reusable UI components
 │       ├── tooltip.js
 │       ├── legend.js
@@ -141,9 +142,9 @@ Navigate to [http://localhost:8000](http://localhost:8000) in your browser.
 | 8 | Nhiệt độ theo trạng thái thời tiết | Box plot | ⬜ |
 | 9 | So sánh thời tiết giữa các vùng | Heatmap | ⬜ |
 | 10 | Chỉ số UV và nhiệt độ | Scatter plot | ⬜ |
-| 11 | Độ dài ban ngày | Area chart | ⬜ |
-| 12 | Ban ngày dài ảnh hưởng UV? | Scatter plot | ⬜ |
-| 13 | UV cao nhất trong năm (Tháng x Vùng) | Heatmap | ⬜ |
+| 11 | Độ dài ban ngày | Multi-line chart | ⬜ |
+| 12 | Ban ngày dài ảnh hưởng UV? | Bubble scatter | ⬜ |
+| 13 | Bản đồ phân bố UV | Choropleth map | ⬜ |
 
 ### Mandatory Requirements
 

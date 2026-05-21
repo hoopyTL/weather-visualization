@@ -31,7 +31,7 @@ import { loadWeatherData } from '../dataLoader.js';
 const CONTAINER = '#chart-task11';          // div that holds the chart
 const CHART_ID = 'task11';
 
-const MARGIN = { top: 30, right: 180, bottom: 60, left: 60 };
+const MARGIN = { top: 30, right: 60, bottom: 60, left: 60 };
 
 // Vietnamese month labels
 const MONTH_LABELS = [
@@ -68,11 +68,22 @@ export function render(data, filters = {}) {
   _rawData = data;
 
   const { series, nationalSeries } = _aggregate(data);
-  _activeKeys = new Set(); // Mặc định không chọn vùng nào (Focus + Context)
+  _activeKeys = new Set(series.map(s => s.region)); // Default show all 6 regions
 
   _drawChart(series, nationalSeries);
   _drawLegend(series);
+  _buildStatCards(series);
   _applyVisibilityTransition(_activeKeys); // Set trạng thái khởi tạo
+  
+  // Attach National Only button listener
+  const btnNat = document.getElementById('btn-national-t11');
+  if (btnNat) {
+    btnNat.onclick = () => {
+      _activeKeys = new Set();
+      _drawLegend(series, _activeKeys);
+      _applyVisibilityTransition(_activeKeys);
+    };
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -121,13 +132,13 @@ function _aggregate(data) {
     }),
     d => `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, '0')}`
   );
-  
+
   const sortedNationalKeys = Array.from(nationalMap.keys()).sort();
   const nationalSeries = sortedNationalKeys.map(k => nationalMap.get(k));
 
-  return { 
-    series: series.sort((a, b) => a.region.localeCompare(b.region)), 
-    nationalSeries 
+  return {
+    series: series.sort((a, b) => a.region.localeCompare(b.region)),
+    nationalSeries
   };
 }
 
@@ -141,7 +152,7 @@ function _drawChart(series, nationalSeries) {
 
   // ── Dimensions ──────────────────────────────────────────
   const totalW = container.clientWidth || 800;
-  const totalH = container.clientHeight || 420;
+  const totalH = 420; // Fixed height to prevent unbounded growth from stats cards
   const innerW = totalW - MARGIN.left - MARGIN.right;
   const innerH = totalH - MARGIN.top - MARGIN.bottom;
 
@@ -265,21 +276,7 @@ function _drawChart(series, nationalSeries) {
     .attr('fill', 'none')
     .attr('stroke', '#94a3b8')
     .attr('stroke-width', 3)
-    .attr('stroke-dasharray', '6,4')
     .attr('opacity', 1);
-
-  if (nationalSeries.length > 0) {
-    const lastNat = nationalSeries[nationalSeries.length - 1];
-    g.append('text')
-      .attr('class', 'national-label')
-      .attr('x', xScale(lastNat.date) + 8)
-      .attr('y', yScale(lastNat.avgHours))
-      .attr('dy', '0.35em')
-      .attr('fill', '#94a3b8')
-      .attr('font-size', '11px')
-      .attr('font-weight', 600)
-      .text('Trung bình Toàn quốc');
-  }
 
   // ── Draw lines ───────────────────────────────────────────
   const seriesG = g.append('g').attr('class', 'series-group');
@@ -331,24 +328,21 @@ function _drawChart(series, nationalSeries) {
       .attr('opacity', 0.85);
   });
 
-  // ── Inline end-labels (right side of chart) ──────────────
-  series.forEach(s => {
-    const last = s.values[s.values.length - 1];
-    if (!last) return;
-
-    g.append('text')
-      .attr('class', `end-label end-label--${_sanitizeKey(s.region)}`)
-      .attr('x', xScale(last.date) + 8)
-      .attr('y', yScale(last.avgHours))
-      .attr('dy', '0.35em')
-      .attr('fill', regionColor(s.region))
-      .attr('font-size', '11px')
-      .attr('font-family', 'IBM Plex Sans, sans-serif')
-      .attr('font-weight', 600)
-      .text(REGION_SHORT[s.region] || s.region);
+  // ── Animate Line Drawing on Load ─────────────────────────
+  g.selectAll('.national-line, .series__line').each(function() {
+    const length = this.getTotalLength();
+    if (length > 0) {
+      d3.select(this)
+        .attr('stroke-dasharray', length)
+        .attr('stroke-dashoffset', length)
+        .transition('draw')
+        .duration(2000)
+        .ease(d3.easeCubicInOut)
+        .attr('stroke-dashoffset', 0);
+    }
   });
 
-  // ── Hover overlay ────────────────────────────────────────
+  // ── Tooltip Interaction ────────────────────────────────────────
   _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, innerW, innerH);
 }
 
@@ -375,7 +369,7 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
     .on('mousemove', function (event) {
       const mx = d3.pointer(event)[0];
       const hoveredDate = xScale.invert(mx);
-      
+
       // Find nearest date in dataset
       const dates = nationalSeries.map(v => v.date);
       const bisect = d3.bisector(d => d).left;
@@ -383,9 +377,9 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
       const d0 = dates[i - 1], d1 = dates[i];
       let closestDate = d0;
       if (d0 && d1) {
-         closestDate = hoveredDate - d0 > d1 - hoveredDate ? d1 : d0;
+        closestDate = hoveredDate - d0 > d1 - hoveredDate ? d1 : d0;
       } else if (d1) {
-         closestDate = d1;
+        closestDate = d1;
       }
 
       crosshair
@@ -394,10 +388,10 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
         .attr('opacity', 1);
 
       // Highlight dots at this month (only for active regions)
-      d3.selectAll('.series__dot').each(function() {
+      d3.selectAll('.series__dot').each(function () {
         const region = this.parentNode.getAttribute('data-region');
         if (!_activeKeys.has(region)) return;
-        
+
         const isHovered = d3.select(this).datum().date.getTime() === closestDate.getTime();
         d3.select(this)
           .attr('r', isHovered ? 6 : 3.5)
@@ -435,7 +429,7 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
     })
     .on('mouseleave', function () {
       crosshair.attr('opacity', 0);
-      d3.selectAll('.series__dot').each(function() {
+      d3.selectAll('.series__dot').each(function () {
         const region = this.parentNode.getAttribute('data-region');
         if (_activeKeys.has(region)) {
           d3.select(this).attr('r', 3.5).attr('opacity', 0.85);
@@ -447,7 +441,7 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
 
 /* ─── Legend ────────────────────────────────────────────── */
 
-function _drawLegend(series) {
+function _drawLegend(series, activeKeys) {
   // Ensure legend container exists inside chart container
   let legendContainer = document.querySelector(`${CONTAINER} .chart-legend-container`);
   if (!legendContainer) {
@@ -463,10 +457,53 @@ function _drawLegend(series) {
     color: regionColor(s.region),
   }));
 
-  _legend.render(items, (key, isActive, activeSet) => {
-    _activeKeys = activeSet;
-    _applyVisibilityTransition(activeSet);
-  }, []); // Truyền [] để legend khởi tạo với 0 vùng được chọn
+  _legend.render(
+    items, 
+    (key, isActive, activeSet) => {
+      _activeKeys = activeSet;
+      _applyVisibilityTransition(activeSet);
+    }, 
+    activeKeys !== undefined ? Array.from(activeKeys) : null,
+    (key, isHovering) => {
+      _applyHoverTransition(key, isHovering);
+    }
+  );
+}
+
+/**
+ * Handle hover on legend items
+ * @param {string} hoveredKey 
+ * @param {boolean} isHovering 
+ */
+function _applyHoverTransition(hoveredKey, isHovering) {
+  if (!isHovering) {
+    // Restore normal state
+    _applyVisibilityTransition(_activeKeys);
+    return;
+  }
+
+  // Highlight hoveredKey, dim others
+  d3.selectAll('.series').each(function () {
+    const region = d3.select(this).attr('data-region');
+    const isHoveredRegion = region === hoveredKey;
+    
+    if (!_activeKeys.has(region)) return;
+
+    d3.select(this).select('.series__line')
+      .transition('opacity').duration(200)
+      .attr('opacity', isHoveredRegion ? 1 : 0.2)
+      .attr('stroke-width', isHoveredRegion ? 3.5 : 2.5);
+
+    d3.select(this).select('.series__band')
+      .transition('opacity').duration(200)
+      .attr('opacity', isHoveredRegion ? 0.15 : 0.02);
+
+    d3.select(this).selectAll('.series__dot')
+      .transition('opacity').duration(200)
+      .attr('opacity', isHoveredRegion ? 1 : 0.2);
+  });
+
+  d3.select('.national-line').transition('opacity').duration(200).attr('opacity', 0.1);
 }
 
 /**
@@ -477,8 +514,7 @@ function _applyVisibilityTransition(activeSet) {
   const hasAnyActive = activeSet.size > 0;
 
   // Fade out national line if any region is active (Focus mode)
-  d3.select('.national-line').transition().duration(400).attr('opacity', hasAnyActive ? 0.3 : 1);
-  d3.select('.national-label').transition().duration(400).attr('opacity', hasAnyActive ? 0.3 : 1);
+  d3.select('.national-line').transition('opacity').duration(400).attr('opacity', hasAnyActive ? 0.3 : 1);
 
   // Region Lines and bands
   d3.selectAll('.series').each(function () {
@@ -488,38 +524,102 @@ function _applyVisibilityTransition(activeSet) {
     // Mặc định (hasAnyActive = false): Ẩn sạch các đường vùng (opacity 0)
     // Khi có vùng được chọn (hasAnyActive = true): Vùng active = 1, vùng inactive = 0.05 (rất mờ) hoặc 0 tùy bạn. Mình set 0 luôn cho sạch.
     const lineOpacity = hasAnyActive ? (active ? 1 : 0) : 0;
-    const dotOpacity  = hasAnyActive ? (active ? 0.85 : 0) : 0;
+    const dotOpacity = hasAnyActive ? (active ? 0.85 : 0) : 0;
     const bandOpacity = active ? 0.08 : 0;
 
     d3.select(this).select('.series__line')
-      .transition().duration(400)
+      .transition('opacity').duration(400)
       .ease(d3.easeQuadInOut)
       .attr('opacity', lineOpacity);
 
     d3.select(this).select('.series__band')
-      .transition().duration(400)
+      .transition('opacity').duration(400)
       .ease(d3.easeQuadInOut)
       .attr('opacity', bandOpacity);
 
     d3.select(this).selectAll('.series__dot')
-      .transition().duration(400)
+      .transition('opacity').duration(400)
       .ease(d3.easeQuadInOut)
       .attr('opacity', dotOpacity);
   });
+}
 
-  // End labels
-  d3.select(CONTAINER).selectAll('text.end-label')
-    .each(function () {
-      const cls = d3.select(this).attr('class') || '';
-      const match = [...activeSet].find(r => cls.includes(_sanitizeKey(r)));
-      const active = match !== undefined;
-      
-      const textOpacity = hasAnyActive ? (active ? 1 : 0) : 0;
-      
-      d3.select(this)
-        .transition().duration(400)
-        .attr('opacity', textOpacity);
+/* ============================================================
+   STAT CARDS
+   ============================================================ */
+function _buildStatCards(series) {
+  let statsEl = document.getElementById('task11-stats');
+  if (statsEl) return;
+
+  const cardBody = document.querySelector('#chart-task11');
+  if (!cardBody) return;
+
+  statsEl = document.createElement('div');
+  statsEl.id = 'task11-stats';
+  statsEl.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;';
+
+  let peakVal = -Infinity, peakRegion = '', peakDate = null;
+  let lowVal = Infinity, lowRegion = '', lowDate = null;
+
+  series.forEach(s => {
+    s.values.forEach(v => {
+      if (v.avgHours > peakVal) { peakVal = v.avgHours; peakRegion = s.region; peakDate = v.date; }
+      if (v.avgHours < lowVal) { lowVal = v.avgHours; lowRegion = s.region; lowDate = v.date; }
     });
+  });
+
+  // Chênh lệch lớn nhất (khoảng tháng 6)
+  let maxDiff = 0;
+  if (series.length > 0 && series[0].values.length > 0) {
+    const juneVals = series.map(s => {
+      const v = s.values.find(d => d.date.getMonth() === 5); // June
+      return v ? v.avgHours : null;
+    }).filter(v => v !== null);
+    if (juneVals.length > 0) {
+      maxDiff = d3.max(juneVals) - d3.min(juneVals);
+    }
+  }
+
+  const cards = [
+    {
+      cls: 'peak', color: '#ffb347', label: 'NGÀY DÀI NHẤT',
+      value: `${peakVal.toFixed(1)}h`,
+      desc: `${REGION_SHORT[peakRegion] || peakRegion}, Tháng ${peakDate.getMonth() + 1}/${peakDate.getFullYear()}`
+    },
+    {
+      cls: 'low', color: '#b08cff', label: 'NGÀY NGẮN NHẤT',
+      value: `${lowVal.toFixed(1)}h`,
+      desc: `${REGION_SHORT[lowRegion] || lowRegion}, Tháng ${lowDate.getMonth() + 1}/${lowDate.getFullYear()}`
+    },
+    {
+      cls: 'summer', color: '#4fc3f7', label: 'MÙA NGÀY DÀI',
+      value: 'Tháng 5–8',
+      desc: 'Thời gian ban ngày lớn hơn ban đêm'
+    },
+    {
+      cls: 'range', color: '#7fd16e', label: 'LỆCH THEO VĨ ĐỘ',
+      value: `~${maxDiff.toFixed(1)}h`,
+      desc: 'Chênh lệch giờ sáng giữa Bắc và Nam vào Hè'
+    },
+  ];
+
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:12px;padding:14px 18px;position:relative;overflow:hidden;`;
+    div.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c.color};"></div>
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:7px;">${c.label}</div>
+      <div style="font-size:24px;font-weight:700;letter-spacing:-0.3px;line-height:1;margin-bottom:5px;color:${c.color};">${c.value}</div>
+      <div style="font-size:11px;color:var(--color-text-muted);">${c.desc}</div>`;
+    statsEl.appendChild(div);
+  });
+
+  const legendEl = document.querySelector(`${CONTAINER} .chart-legend-container`);
+  if (legendEl && legendEl.parentNode) {
+    legendEl.parentNode.insertBefore(statsEl, legendEl.nextSibling);
+  } else {
+    cardBody.parentNode?.appendChild(statsEl);
+  }
 }
 
 /* ─── Helpers ───────────────────────────────────────────── */

@@ -21,8 +21,9 @@ export class Legend {
    * @param {Array<{label: string, color: string, key: string}>} items
    * @param {Function} onToggle - callback(key, isActive) when item is clicked
    * @param {Array<string>} initialActive - optional array of keys to start active
+   * @param {Function} onHover - optional callback(key, isHovering) when item is hovered
    */
-  render(items, onToggle = null, initialActive = null) {
+  render(items, onToggle = null, initialActive = null, onHover = null) {
     if (initialActive !== null) {
       this.activeItems = new Set(initialActive);
     } else {
@@ -54,6 +55,12 @@ export class Legend {
           .classed('chart-legend__item--dimmed', item => !this.activeItems.has(item.key));
 
         onToggle(d.key, this.activeItems.has(d.key), this.activeItems);
+      })
+      .on('mouseenter', (event, d) => {
+        if (onHover) onHover(d.key, true);
+      })
+      .on('mouseleave', (event, d) => {
+        if (onHover) onHover(d.key, false);
       });
 
     itemSel.selectAll('.chart-legend__swatch')
