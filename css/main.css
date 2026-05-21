@@ -9,21 +9,21 @@
    1. CSS CUSTOM PROPERTIES (Design Tokens)
    ============================================================ */
 :root {
-  /* --- Color Palette --- */
-  --color-bg-primary:    #0f1117;
-  --color-bg-secondary:  #1a1d27;
-  --color-bg-card:       #1e2130;
-  --color-bg-card-hover: #252840;
-  --color-border:        #2a2d3e;
-  --color-border-light:  #3a3d5066;
+  /* --- Color Palette (Warm Light Theme) --- */
+  --color-bg-primary:    #efeadd;  /* Warm cream background */
+  --color-bg-secondary:  #e4decb;  /* Slightly darker cream */
+  --color-bg-card:       #fcfbfa;  /* Almost white cream for cards */
+  --color-bg-card-hover: #f4f0e6;  /* Card hover state */
+  --color-border:        #d4cbb8;  /* Warm border */
+  --color-border-light:  #d4cbb866;
 
-  --color-text-primary:   #e8eaf0;
-  --color-text-secondary: #9ca3b8;
-  --color-text-muted:     #6b7394;
+  --color-text-primary:   #0f172a; /* slate-900 */
+  --color-text-secondary: #334155; /* slate-700 */
+  --color-text-muted:     #64748b; /* slate-500 */
 
-  --color-accent:        #6c63ff;
-  --color-accent-light:  #8b83ff;
-  --color-accent-glow:   #6c63ff33;
+  --color-accent:        #4f46e5;  /* indigo-600 */
+  --color-accent-light:  #6366f1;  /* indigo-500 */
+  --color-accent-glow:   #4f46e533;
 
   /* --- Region Color Palette (consistent across all charts) --- */
   --color-region-dbsh:       #4fc3f7;  /* Đồng Bằng Sông Hồng */

@@ -55,6 +55,25 @@ export function regionShort(region) {
 }
 
 /**
+ * Sanitize a string for use as a CSS class or DOM ID
+ * @param {string} str
+ * @returns {string}
+ */
+export function sanitizeKey(str) {
+  return str
+    .toLowerCase()
+    .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+    .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+    .replace(/[ìíịỉĩ]/g, 'i')
+    .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+    .replace(/[ùúụủũưừứựửữ]/g, 'u')
+    .replace(/[ỳýỵỷỹ]/g, 'y')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
  * Create a D3 ordinal color scale for regions
  * @param {string[]} regions - Array of region names
  * @returns {d3.ScaleOrdinal}
