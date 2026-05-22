@@ -22,6 +22,7 @@ import * as task11 from './charts/task11-multiLineChart.js';
 import * as task12 from './charts/task12-bubbleScatter.js';
 import * as task13 from './charts/task13-uvChoropleth.js';
 import * as task14 from './charts/task14-heatRiskMap.js';
+import * as task15 from './charts/task15-scatterplot.js';
 
 /* ============================================================
    PAGE DEFINITIONS
@@ -65,6 +66,7 @@ const PAGES = {
       { id: 'task11', module: task11, title: 'Độ dài ban ngày' },
       { id: 'task12', module: task12, title: 'Ban ngày vs UV' },
       { id: 'task13', module: task13, title: 'Bản đồ phân bố UV' },
+      { id: 'task15', module: task15, title: 'Ảnh hưởng của Thời lượng ban ngày' }
     ],
   },
 };
