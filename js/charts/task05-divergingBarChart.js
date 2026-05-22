@@ -153,6 +153,10 @@ function _buildControls() {
 }
 
 function _drawSummary(el, data) {
+  console.log('el.getBoundingClientRect():', el.getBoundingClientRect());
+  console.log('el.offsetWidth:', el.offsetWidth);
+  console.log('el.parentElement.offsetWidth:', el.parentElement?.offsetWidth);
+  console.log('el.parentElement.parentElement.offsetWidth:', el.parentElement?.parentElement?.offsetWidth);
   const summaryData = METRICS.map(m => {
     const validData = data.filter(d => d[m.key] != null && !isNaN(+d[m.key]));
     
@@ -172,15 +176,17 @@ function _drawSummary(el, data) {
   }).sort((a, b) => Math.abs(b.diffPct) - Math.abs(a.diffPct)); // Sort tuyệt đối giảm dần
 
   // 2. Vẽ biểu đồ
-  const W = el.clientWidth || 700;
+  const W = Math.max(el.getBoundingClientRect().width, 700);
   const H = 400;
   const W_MARGIN = { top: 40, right: 80, bottom: 40, left: 120 };
   const w = W - W_MARGIN.left - W_MARGIN.right;
   const h = H - W_MARGIN.top - W_MARGIN.bottom;
 
   const svg = d3.select(el).append('svg')
-    .attr('width', W).attr('height', H);
-
+    .attr('width', W)
+    .attr('height', Math.max(H, 200))
+    .attr('viewBox', `0 0 ${W} ${Math.max(H, 200)}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
   // Tiêu đề
   svg.append('text')
     .attr('x', W_MARGIN.left).attr('y', 20)
@@ -190,8 +196,12 @@ function _drawSummary(el, data) {
   const g = svg.append('g').attr('transform', `translate(${W_MARGIN.left},${W_MARGIN.top})`);
 
   // Scales
-  const maxAbs = d3.max(summaryData, d => Math.abs(d.diffPct)) * 1.2 || 10;
-  const x = d3.scaleLinear().domain([-maxAbs, maxAbs]).range([0, w]);
+  const minVal = d3.min(summaryData, d => d.diffPct) || 0;
+  const maxVal = d3.max(summaryData, d => d.diffPct) || 0;
+  // Tự động scale mượt mà cả 2 bên trái phải, giữ điểm 0
+  const x = d3.scaleLinear()
+    .domain([Math.min(0, minVal * 1.2), Math.max(0, maxVal * 1.2)]) 
+    .range([0, w]);
   const y = d3.scaleBand().domain(summaryData.map(d => d.name)).range([0, h]).padding(0.3);
 
   // Trục 0
@@ -213,7 +223,7 @@ function _drawSummary(el, data) {
     .attr('y', d => y(d.name) + y.bandwidth() / 2 + 4)
     .attr('x', x(0)).style('opacity', 0)
     .attr('text-anchor', d => d.diffPct < 0 ? 'end' : 'start')
-    .attr('font-size', 11).attr('font-weight', 'bold').attr('fill', '#0b0c0c')
+    .attr('font-size', 11).attr('font-weight', 'bold').attr('fill', '#131414')
     .text(d => `${d.diffPct > 0 ? '+' : ''}${d.diffPct.toFixed(1)}%`)
     .transition().duration(800).delay(200)
     .attr('x', d => x(d.diffPct) + (d.diffPct < 0 ? -6 : 6))
@@ -345,13 +355,15 @@ function _sort(provinces) {
 // ─── Draw ─────────────────────────────────────────────────────────────────────
 
 function _draw(el, rows) {
-  const W  = el.clientWidth || 700;
+  const W = Math.max(el.getBoundingClientRect().width || 900, 700);
   const H  = MARGIN.top + rows.length * ROW_H + MARGIN.bottom;
   const w  = W - MARGIN.left - MARGIN.right;
 
   const svg = d3.select(el).append('svg')
     .attr('width', W)
-    .attr('height', Math.max(H, 200));
+    .attr('height', Math.max(H, 200))
+    .attr('viewBox', `0 0 ${W} ${Math.max(H, 200)}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
 
   // Subtitle
   svg.append('text')
@@ -364,8 +376,11 @@ function _draw(el, rows) {
     .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
   // Scales
-  const ext = d3.max(rows, d => Math.abs(d.diff)) * 1.18 || 1;
-  const x   = d3.scaleLinear().domain([-ext, ext]).range([0, w]);
+  const minDiff = d3.min(rows, d => d.diff) || 0;
+  const maxDiff = d3.max(rows, d => d.diff) || 0;
+  const x = d3.scaleLinear()
+    .domain([Math.min(0, minDiff * 1.18), Math.max(0, maxDiff * 1.18)])
+    .range([0, w]);
   const y   = d3.scaleBand()
     .domain(rows.map(d => d.name))
     .range([0, rows.length * ROW_H])

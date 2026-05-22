@@ -7,18 +7,6 @@
  *          hover crosshair tooltip, brush-zoom, stat cards
  *
  * @module task01-lineChart
- *
- * ── THAY ĐỔI SO VỚI BẢN GỐC ────────────────────────────────────────────────
- * 1. Field fix   : d.avgtemp_c  →  d.avgTemp  (camelCase từ dataLoader.js)
- * 2. Aggregation : theo THÁNG thay vì từng ngày → đường mượt, dễ đọc
- * 3. Area fill   : gradient per-region (không chồng lên nhau) thay vì solid
- * 4. Dots        : thêm circle tại mỗi điểm tháng
- * 5. Trục X      : scalePoint theo tháng, format "T4'24" — không bị chồng
- * 6. Controls    : inject 2 toggle button "Theo vùng / Tổng hợp" vào #task01-controls
- * 7. Legend      : inject vào #task01-legend, click ẩn/hiện từng vùng
- * 8. Stat cards  : inject 4 thẻ thống kê bên dưới chart vào #task01-stats (tạo mới)
- * 9. Brush zoom  : giữ nguyên, cập nhật để hoạt động với scalePoint
- * ────────────────────────────────────────────────────────────────────────────
  */
 
 import { regionColor, formatTemp } from '../utils.js';
@@ -27,7 +15,7 @@ const CONTAINER   = '#chart-task01';
 const CONTROLS_ID = '#task01-controls';
 const LEGEND_ID   = '#task01-legend';
 
-/* ── Tooltip tự quản lý, không phụ thuộc Tooltip class ── */
+/* ── Tooltip ── */
 const _tt = (() => {
   let el = document.getElementById('_t01_tooltip');
   if (!el) {
@@ -77,7 +65,6 @@ const _tt = (() => {
   };
 })();
 
-// ── Tên rút gọn ────────────────────────────────────────────────────────────
 const REGION_SHORT = {
   'Đồng Bằng Sông Hồng':                     'Đồng Bằng Sông Hồng',
   'Trung du và miền núi Bắc Bộ':              'Trung du và miền núi Bắc Bộ',
@@ -87,7 +74,6 @@ const REGION_SHORT = {
   'Đồng Bằng Sông Cửu Long':                  'Đồng Bằng Sông Cửu Long',
 };
 
-// ── State module-level ─────────────────────────────────────────────────────
 let svg, g, xAxisG, yAxisG, linesG, areasG, dotsG, brushG, clipPathId;
 let width, height, margin;
 let xScale, yScale;
@@ -95,9 +81,6 @@ let _monthlyData = [];   // cache aggregated data
 let _dimmed      = new Set();
 let _view        = 'region'; // 'region' | 'all'
 
-/* ============================================================
-   INIT – chạy 1 lần, dựng khung SVG tĩnh
-   ============================================================ */
 export function init() {
   const containerEl = d3.select(CONTAINER);
   if (containerEl.empty()) return;
@@ -626,7 +609,6 @@ function _buildStatCards(monthlyData) {
     });
   });
 
-  // Range: max của ĐNB/ĐBSCL minus min của TD&MNBB ở cùng tháng
   const rangePairs = monthlyData[0].points.map(p => {
     const vals = monthlyData.map(d => ({ region: d.region, val: d.points.find(q => q.monthKey === p.monthKey)?.avgTemp }));
     const max  = d3.max(vals, v => v.val);
