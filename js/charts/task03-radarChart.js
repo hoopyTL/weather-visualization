@@ -238,6 +238,32 @@ export function render(data, options = {}) {
     exit => exit.call(exit => exit.transition().duration(400).style('opacity', 0).remove())
   );
 
+  // Also bind direct DOM hover events on the HTML legend items for robustness
+  d3.selectAll('#task03-controls .chart-legend__item')
+    .on('mouseenter', function(event, d) {
+      const key = d.key;
+      polygonGroup.selectAll('.radar-polygon')
+        .transition().duration(200)
+        .style('opacity', p => p.region === key ? 1 : 0)
+        .style('pointer-events', p => p.region === key ? 'auto' : 'none');
+
+      polygonGroup.selectAll('.radar-polygon')
+        .filter(p => p.region === key)
+        .raise();
+
+      dotGroup.selectAll('.radar-dot')
+        .transition().duration(200)
+        .style('opacity', dd => dd.region === key ? 1 : 0)
+        .style('pointer-events', dd => dd.region === key ? 'auto' : 'none');
+
+      dotGroup.selectAll('.radar-dot')
+        .filter(dd => dd.region === key)
+        .raise();
+    })
+    .on('mouseleave', function() {
+      resetHighlight();
+    });
+
   // 6. Draw vertices circles (dots)
   const dotData = [];
   regionData.forEach(r => {
@@ -360,17 +386,48 @@ export function render(data, options = {}) {
     key: r
   }));
 
-  legend.render(legendItems, (key, isActive, activeItems) => {
-    polygonGroup.selectAll('.radar-polygon')
-      .transition().duration(300)
-      .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
-      .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
+  // onToggle: click to toggle active regions
+  // onHover: hover over legend item should highlight that region and dim others (like Task 07)
+  legend.render(legendItems,
+    (key, isActive, activeItems) => {
+      polygonGroup.selectAll('.radar-polygon')
+        .transition().duration(300)
+        .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
+        .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
 
-    dotGroup.selectAll('.radar-dot')
-      .transition().duration(300)
-      .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
-      .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
-  });
+      dotGroup.selectAll('.radar-dot')
+        .transition().duration(300)
+        .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
+        .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
+    },
+    null,
+    (key, isHovering) => {
+      if (isHovering) {
+        // Show only the hovered region (hide others)
+        polygonGroup.selectAll('.radar-polygon')
+          .transition().duration(200)
+          .style('opacity', d => d.region === key ? 1 : 0)
+          .style('pointer-events', d => d.region === key ? 'auto' : 'none');
+
+        // ensure hovered polygon is on top
+        polygonGroup.selectAll('.radar-polygon')
+          .filter(d => d.region === key)
+          .raise();
+
+        dotGroup.selectAll('.radar-dot')
+          .transition().duration(200)
+          .style('opacity', d => d.region === key ? 1 : 0)
+          .style('pointer-events', d => d.region === key ? 'auto' : 'none');
+
+        dotGroup.selectAll('.radar-dot')
+          .filter(d => d.region === key)
+          .raise();
+      } else {
+        // Restore state based on active items
+        resetHighlight();
+      }
+    }
+  );
 }
 
 function showPlaceholder(icon, label) {
