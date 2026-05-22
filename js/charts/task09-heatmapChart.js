@@ -83,13 +83,13 @@ export function render(data, options = {}) {
   };
 
   // 3. Layout configuration based on responsive screen width
-  const margin = { top: 40, right: 20, bottom: 20, left: 160 };
+  const margin = { top: 40, right: 20, bottom: 20, left: 200 };
   const dim = getDimensions(CONTAINER, margin);
   if (dim.width === 0) return;
   const isNarrow = dim.width < 500;
 
   if (isNarrow) {
-    margin.left = 90;
+    margin.left = 120;
     dim.innerWidth = dim.width - margin.left - margin.right;
   }
 
@@ -164,6 +164,12 @@ export function render(data, options = {}) {
     return d3.interpolateBlues(value);
   };
 
+  const getLabelColor = (normVal) => {
+    const color = d3.rgb(getColor(normVal));
+    const luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
+    return luminance > 0.58 ? '#111111' : '#ffffff';
+  };
+
   // 6. Draw Matrix Cells
   let cellsG = g.select('.cells-group');
   if (cellsG.empty()) {
@@ -217,14 +223,14 @@ export function render(data, options = {}) {
       .style('font-size', isNarrow ? '9px' : 'var(--fs-xs)')
       .style('font-family', 'var(--font-mono)')
       .style('font-weight', 'var(--fw-medium)')
-      .style('fill', d => d.normValue > 0.52 ? '#ffffff' : 'var(--color-bg-primary)')
+      .style('fill', d => getLabelColor(d.normValue))
       .style('opacity', 0)
       .text(d => d.format(d.value))
       .call(enter => enter.transition().duration(600).style('opacity', 1)),
     update => update.call(update => update.transition().duration(600)
       .attr('x', d => xScale(d.metricKey) + xScale.bandwidth() / 2)
       .attr('y', d => yScale(d.region) + yScale.bandwidth() / 2)
-      .style('fill', d => d.normValue > 0.52 ? '#ffffff' : 'var(--color-bg-primary)')
+      .style('fill', d => getLabelColor(d.normValue))
       .text(d => d.format(d.value))),
     exit => exit.remove()
   );
