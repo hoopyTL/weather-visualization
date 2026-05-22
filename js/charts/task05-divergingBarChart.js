@@ -184,7 +184,7 @@ function _drawSummary(el, data) {
   // Tiêu đề
   svg.append('text')
     .attr('x', W_MARGIN.left).attr('y', 20)
-    .attr('font-size', 14).attr('font-weight', 'bold').attr('fill', 'var(--color-text-main, #dde1e6)')
+    .attr('font-size', 14).attr('font-weight', 'bold').attr('fill', 'var(--color-text-main, #050505)')
     .text('Tổng quan chênh lệch (%): Ven biển so với Nội địa');
 
   const g = svg.append('g').attr('transform', `translate(${W_MARGIN.left},${W_MARGIN.top})`);
@@ -213,7 +213,7 @@ function _drawSummary(el, data) {
     .attr('y', d => y(d.name) + y.bandwidth() / 2 + 4)
     .attr('x', x(0)).style('opacity', 0)
     .attr('text-anchor', d => d.diffPct < 0 ? 'end' : 'start')
-    .attr('font-size', 11).attr('font-weight', 'bold').attr('fill', '#c6ccd6')
+    .attr('font-size', 11).attr('font-weight', 'bold').attr('fill', '#0b0c0c')
     .text(d => `${d.diffPct > 0 ? '+' : ''}${d.diffPct.toFixed(1)}%`)
     .transition().duration(800).delay(200)
     .attr('x', d => x(d.diffPct) + (d.diffPct < 0 ? -6 : 6))
@@ -223,7 +223,7 @@ function _drawSummary(el, data) {
   g.selectAll('.sylabel').data(summaryData).join('text').attr('class', 'sylabel')
     .attr('x', -10).attr('y', d => y(d.name) + y.bandwidth() / 2 + 4)
     .attr('text-anchor', 'end').attr('font-size', 12)
-    .attr('fill', '#ffffff')
+    .attr('fill', '#171515')
     .text(d => d.name);
 
   // Tooltip tương tác
