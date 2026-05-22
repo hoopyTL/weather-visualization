@@ -145,6 +145,7 @@ Navigate to [http://localhost:8000](http://localhost:8000) in your browser.
 | 11 | Độ dài ban ngày | Multi-line chart | ⬜ |
 | 12 | Ban ngày dài ảnh hưởng UV? | Bubble scatter | ⬜ |
 | 13 | Bản đồ phân bố UV | Choropleth map | ⬜ |
+| 15 | Phân tích ảnh hưởng của thời lượng ban ngày đến nhiệt độ và độ ẩm theo khu vực | Scatter Plot | ⬜ |
 
 ### Mandatory Requirements
 
