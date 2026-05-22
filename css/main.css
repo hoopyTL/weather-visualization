@@ -158,13 +158,17 @@ h4 { font-size: var(--fs-md); }
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
   transition: border-color var(--transition-base),
-              box-shadow var(--transition-base);
+              box-shadow var(--transition-base),
+              transform var(--transition-base);
 }
 
 .card:hover {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-glow);
+  transform: translateY(-4px);
 }
 
 .card__header {
@@ -192,6 +196,7 @@ h4 { font-size: var(--fs-md); }
 .card__body {
   position: relative;
   min-height: 300px;
+  flex: 1;
 }
 
 /* ============================================================
@@ -293,6 +298,13 @@ h4 { font-size: var(--fs-md); }
   gap: var(--space-md);
   min-height: 300px;
   color: var(--color-text-muted);
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+
+.loading.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .loading__spinner {

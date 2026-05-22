@@ -49,6 +49,31 @@ export class Tooltip {
   }
 
   /**
+   * Move tooltip to a new mouse position without changing content
+   * @param {MouseEvent} event
+   */
+  move(event) {
+    if (!this.el.classed('chart-tooltip--visible')) return;
+    
+    const tipRect  = this.el.node().getBoundingClientRect();
+    const padX = 16, padY = 16;
+
+    let x = event.clientX + padX;
+    let y = event.clientY + padY;
+
+    if (x + tipRect.width > window.innerWidth) {
+      x = event.clientX - tipRect.width - padX;
+    }
+    if (y + tipRect.height > window.innerHeight) {
+      y = event.clientY - tipRect.height - padY;
+    }
+
+    this.el
+      .style('left', `${x}px`)
+      .style('top', `${y}px`);
+  }
+
+  /**
    * Hide tooltip
    */
   hide() {

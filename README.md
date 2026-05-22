@@ -59,7 +59,7 @@ weather-visualization/
 │   │   ├── task09-heatmapChart.js
 │   │   ├── task10-scatterChart.js
 │   │   ├── task11-multiLineChart.js
-│   │   ├── task12-bubbleScatter.js
+│   │   ├── task12-simpleScatter.js
 │   │   └── task13-uvChoropleth.js
 │   └── components/             # Reusable UI components
 │       ├── tooltip.js
@@ -142,16 +142,27 @@ Navigate to [http://localhost:8000](http://localhost:8000) in your browser.
 | 8 | Nhiệt độ theo trạng thái thời tiết | Box plot | ⬜ |
 | 9 | So sánh thời tiết giữa các vùng | Heatmap | ⬜ |
 | 10 | Chỉ số UV và nhiệt độ | Scatter plot | ⬜ |
-| 11 | Độ dài ban ngày | Multi-line chart | ⬜ |
-| 12 | Ban ngày dài ảnh hưởng UV? | Bubble scatter | ⬜ |
-| 13 | Bản đồ phân bố UV | Choropleth map | ⬜ |
+| 11 | Độ dài ban ngày | Multi-line chart | ✅ |
+| 12 | Phân phối rủi ro UV & Giờ nắng | Dual Axis Chart (Bar + Line) | ✅ |
+| 13 | Bản đồ phân bố mức độ UV | Choropleth map | ✅ |
 | 15 | Phân tích ảnh hưởng của thời lượng ban ngày đến nhiệt độ và độ ẩm theo khu vực | Scatter Plot | ⬜ |
 
 ### Mandatory Requirements
 
 - [x] D3.js v6+ (using v7)
-- [ ] ≥ 2 biểu đồ tương tác (hover, tooltip, filter, highlight)
-- [ ] ≥ 1 biểu đồ có transition khi đổi filter
+- [x] ≥ 2 biểu đồ tương tác (hover, tooltip, filter, highlight)
+- [x] ≥ 1 biểu đồ có transition khi đổi filter
+
+---
+
+## ☀️ Chuyên đề UV & Bức xạ (Task 11, 12, 13)
+
+Cụm tính năng đặc biệt tập trung phân tích **Chỉ số UV** và **Thời lượng ban ngày** tại Việt Nam:
+
+- **Bản đồ Phân bố UV (Choropleth - Task 13):** Theo dõi mức độ UV nguy hiểm qua dải màu chuẩn hóa (5-10). Cung cấp `Timeline Animation` để dễ dàng quan sát sự dịch chuyển UV qua các tháng. Tự động sinh danh sách Top 5 tỉnh nguy hiểm nhất.
+- **Biểu đồ rủi ro UV (Dual Axis - Task 12):** Kết hợp cột (Chỉ số UV chọc đỉnh) và đường (Số giờ nắng trung bình). Giúp làm nổi bật mức độ nguy hiểm do phơi nhiễm tích lũy, đi kèm hệ thống sinh **Cảnh báo Hành động (Actionable Alert)** tự động y tế hóa số liệu.
+- **Biểu đồ Độ dài ban ngày (Multi-line - Task 11):** Thể hiện nghịch lý vĩ độ và chu kỳ mặt trời qua các khu vực.
+- **Tương tác Đa chiều (Cross-filtering):** Click vào bản đồ để lọc riêng biểu đồ dưới, tự động scale dữ liệu mượt mà bằng CSS Transition.
 
 ---
 
