@@ -16,6 +16,7 @@ const MARGIN = { top: 20, right: 20, bottom: 20, left: 20 };
 let _tooltip = null;
 let _geoJson = null;
 let _rawData = null;
+let _currentFilters = {};
 
 // Data state
 let _rolledAll = null;
@@ -36,6 +37,7 @@ export function init() {
 export async function render(data, filters = {}) {
   const valid = data.filter(d => d.uv >= 0 && d.name);
   _rawData = valid;
+  _currentFilters = filters;
 
   // 1. Group Data by All Time
   _rolledAll = d3.rollup(
@@ -56,16 +58,9 @@ export async function render(data, filters = {}) {
     valid.map(d => `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, '0')}`)
   )).sort();
 
-  // 3. Find Global Min/Max across all (province, month) for a consistent color scale
-  let allUVs = [];
-  for (const [name, monthMap] of _rolledMonth) {
-    for (const [m, uv] of monthMap) {
-      allUVs.push(uv);
-    }
-  }
-  const ext = d3.extent(allUVs);
-  _globalMinUV = Math.floor(ext[0]); // Dynamic based on data
-  _globalMaxUV = Math.ceil(ext[1]);
+  // 3. Fix Global Min/Max for a consistent color scale regardless of filters
+  _globalMinUV = 5;
+  _globalMaxUV = 10;
 
   // Stop any existing animation
   if (_isPlaying) _togglePlay();
@@ -113,11 +108,16 @@ function _getColorScale() {
   return d3.scaleSequential(d3.interpolateYlOrRd).domain([_globalMinUV, _globalMaxUV]);
 }
 
-function _formatMonthLabel(index) {
-  if (index === -1) return 'All Months';
-  const raw = _uniqueMonths[index];
-  const [y, m] = raw.split('-');
-  return `Tháng ${parseInt(m)}/${y}`;
+function _formatMonthLabel() {
+  if (_currentMonthIndex !== -1 && _uniqueMonths[_currentMonthIndex]) {
+    const [y, m] = _uniqueMonths[_currentMonthIndex].split('-');
+    return `Tháng ${parseInt(m)}/${y}`;
+  }
+  if (_currentFilters.month && _currentFilters.month !== 'All') {
+    const [y, m] = _currentFilters.month.split('-');
+    return `Tháng ${parseInt(m)}/${y}`;
+  }
+  return 'Tất cả thời gian';
 }
 
 function _drawChart() {
@@ -125,13 +125,13 @@ function _drawChart() {
   if (!container) return;
 
   const totalW = container.clientWidth || 800;
-  const totalH = Math.max(container.clientHeight || 600, 600);
-  container.style.minHeight = '600px';
+  const totalH = Math.max(container.clientHeight || 420, 420);
+  container.style.minHeight = '420px';
 
   // Build Flex Layout
   container.innerHTML = `
     <div style="display:flex; width:100%; height:100%; gap:24px;">
-      <div id="t13-map-area" style="flex:1; position:relative; min-height:600px;"></div>
+      <div id="t13-map-area" style="flex:1; position:relative; min-height:420px;"></div>
       <div id="t13-ranking-area" style="width:260px; flex-shrink:0; display:flex; flex-direction:column; padding-top:10px;"></div>
     </div>
   `;
@@ -204,7 +204,9 @@ function _drawChart() {
     .attr('stroke-width', 0.5)
     .attr('cursor', 'pointer')
     .on('mouseover', function (event, d) {
+      g.selectAll('.province-path').attr('opacity', 0.3);
       d3.select(this)
+        .attr('opacity', 1)
         .attr('stroke', '#334155')
         .attr('stroke-width', 1.5)
         .raise();
@@ -215,20 +217,21 @@ function _drawChart() {
       const row = _rawData.find(item => normalizeName(item.name) === normName);
       const region = row ? (REGION_SHORT[row.region] || row.region) : 'N/A';
 
-      const monthMap = _rolledMonth.get(normName);
-      const maxUV = monthMap ? d3.max(Array.from(monthMap.values())) : 'N/A';
+      const provinceData = _rawData.filter(item => normalizeName(item.name) === normName);
+      const maxUV = provinceData.length ? d3.max(provinceData, d => d.uv) : 'N/A';
 
       _tooltip.show(event, Tooltip.buildHTML(
         normName,
         [
           { label: 'Vùng', value: region, color: row ? REGION_COLORS[row.region] : '#ccc' },
           { label: _currentMonthIndex === -1 ? 'UV TB (Cả năm)' : 'UV Tháng', value: uv !== undefined ? uv.toFixed(1) : 'N/A' },
-          { label: 'UV Đỉnh (Max)', value: maxUV !== 'N/A' ? maxUV.toFixed(1) : 'N/A' }
+          { label: 'UV Đỉnh (Max)', value: typeof maxUV === 'number' ? maxUV.toFixed(1) : maxUV }
         ]
       ));
     })
     .on('mousemove', e => _tooltip.show(e, _tooltip.el.html()))
     .on('mouseleave', function () {
+      g.selectAll('.province-path').attr('opacity', 1);
       d3.select(this)
         .attr('stroke', '#fff')
         .attr('stroke-width', 0.5);
@@ -242,8 +245,12 @@ function _drawChart() {
     if (!d) {
       reset();
       miniChart.transition().duration(300).style('opacity', 0);
+      if (window.updateGlobalFilter) window.updateGlobalFilter('province', 'All');
       return;
     }
+    
+    const normName = normalizeName(d.properties.Ten);
+    if (window.updateGlobalFilter) window.updateGlobalFilter('province', normName);
 
     const [[x0, y0], [x1, y1]] = path.bounds(d);
     svg.transition().duration(750).call(
@@ -256,7 +263,6 @@ function _drawChart() {
     );
 
     // Draw Mini Chart
-    const normName = normalizeName(d.properties.Ten);
     const monthMap = _rolledMonth.get(normName);
     if (!monthMap) return;
 
@@ -316,20 +322,6 @@ function _drawChart() {
   // Legend
   _drawLegend(svg, mapW, mapH);
 
-  // Big Month Text Watermark
-  svg.append('text')
-    .attr('class', 'watermark-label')
-    .attr('x', mapW - 40)
-    .attr('y', mapH / 2 - 50)
-    .attr('text-anchor', 'end')
-    .attr('fill', 'var(--color-text-secondary)')
-    .attr('opacity', 0.15)
-    .attr('font-size', '42px')
-    .attr('font-weight', '700')
-    .attr('font-family', 'IBM Plex Sans, sans-serif')
-    .attr('pointer-events', 'none')
-    .text(_formatMonthLabel(_currentMonthIndex));
-
   // Hint
   svg.append('text')
     .attr('x', 20)
@@ -353,10 +345,6 @@ function _updateMapColors(duration = 500) {
       const uv = _getUV(normName);
       return uv !== undefined ? colorScale(uv) : '#f1f5f9';
     });
-
-  // Update watermark
-  svg.select('.watermark-label')
-    .text(_formatMonthLabel(_currentMonthIndex));
 
   // Update Ranking
   _drawRanking();
@@ -389,7 +377,7 @@ function _drawRanking() {
   // 3. Render HTML
   let html = `
     <div style="font-weight:700; font-size:14px; color:var(--color-text-primary); font-family:var(--font-primary); margin-bottom:16px;">
-      Top 5 Tỉnh Nắng Gắt Nhất ☀️
+      Top 5 Tỉnh có UV TB cao nhất ☀️
     </div>
     <div style="display:flex; flex-direction:column; gap:10px;">
   `;
@@ -484,10 +472,10 @@ function _drawLegend(svg, totalW, totalH) {
   ];
 
   whoLabels.forEach(w => {
-    if (w.threshold <= _globalMaxUV) {
+    if (w.threshold >= _globalMinUV && w.threshold <= _globalMaxUV) {
       lgG.append('text')
         .attr('x', legendScale(w.threshold))
-        .attr('y', legendH + 20)
+        .attr('y', legendH + 28)
         .attr('text-anchor', 'middle')
         .attr('fill', '#94a3b8')
         .attr('font-size', '9px')
@@ -516,7 +504,13 @@ function _drawLegend(svg, totalW, totalH) {
 
 function _drawControls() {
   let controls = document.querySelector('#task13-controls');
-  if (!controls) return;
+  if (!controls) {
+    // If it doesn't exist, append it to the container
+    const container = document.querySelector(CONTAINER);
+    controls = document.createElement('div');
+    controls.id = 'task13-controls';
+    container.appendChild(controls);
+  }
 
   // Re-build entirely
   controls.innerHTML = `
@@ -532,7 +526,7 @@ function _drawControls() {
                style="width:200px; cursor:pointer; accent-color:var(--color-accent);" />
 
         <span id="t13-time-label" style="font-size:12px;font-weight:600;font-family:var(--font-primary);color:var(--color-text-primary);min-width:120px;text-align:right;">
-          ${_formatMonthLabel(_currentMonthIndex)}
+          ${_formatMonthLabel()}
         </span>
       </div>
 
@@ -546,7 +540,7 @@ function _drawControls() {
   slider.addEventListener('input', (e) => {
     if (_isPlaying) _togglePlay(); // Pause if user drags slider
     _currentMonthIndex = parseInt(e.target.value);
-    label.textContent = _formatMonthLabel(_currentMonthIndex);
+    label.textContent = _formatMonthLabel();
     _updateMapColors(200); // fast transition for slider drag
   });
 
@@ -585,5 +579,5 @@ function _updateSliderUI() {
   const slider = document.getElementById('t13-slider');
   const label = document.getElementById('t13-time-label');
   if (slider) slider.value = _currentMonthIndex;
-  if (label) label.textContent = _formatMonthLabel(_currentMonthIndex);
+  if (label) label.textContent = _formatMonthLabel();
 }
