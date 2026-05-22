@@ -198,7 +198,7 @@ export function render(data, options = {}) {
       .attr('dy', '18px')
       .style('font-size', 'var(--fs-xs)')
       .style('fill', 'var(--color-text-muted)')
-      .text('Ngày quan trắc');
+      .text('Ngày');
   }
 
   const updateCenterText = (value, label) => {
@@ -206,7 +206,7 @@ export function render(data, options = {}) {
     centerG.select('.center-label').text(label.length > 12 ? label.substring(0, 10) + '...' : label);
   };
 
-  updateCenterText(formatNumber(totalDays), 'Ngày quan trắc');
+  updateCenterText(formatNumber(totalDays), 'Ngày');
 
   // 7. Interactive Bindings for Slices
   const syncLegendState = () => {
@@ -257,7 +257,7 @@ export function render(data, options = {}) {
 
       syncLegendState();
 
-      updateCenterText(formatNumber(totalDays), 'Ngày quan trắc');
+      updateCenterText(formatNumber(totalDays), 'Ngày');
       tooltip.hide();
     });
 
@@ -303,7 +303,7 @@ export function render(data, options = {}) {
 
       syncLegendState();
 
-      updateCenterText(formatNumber(totalDays), 'Ngày quan trắc');
+      updateCenterText(formatNumber(totalDays), 'Ngày');
     });
 }
 

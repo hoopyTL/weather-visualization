@@ -172,18 +172,20 @@ export function render(data, options = {}) {
     .style('stroke-width', '1px');
 
   // Draw axis labels with auto adjustment text anchor
+  // We will compute dynamic averages inside updateAxisLabels
+
   const axisLabels = gridGroup.selectAll('.axis-label-text')
     .data(METRICS);
 
-  axisLabels.join('text')
+  const axisLabelsSelection = axisLabels.join('text')
     .attr('class', 'axis-label-text')
     .attr('x', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
-      return cx + (radius + 15) * Math.cos(angle);
+      return cx + (radius + 25) * Math.cos(angle);
     })
     .attr('y', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
-      return cy + (radius + 15) * Math.sin(angle);
+      return cy + (radius + 25) * Math.sin(angle);
     })
     .attr('text-anchor', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
@@ -195,10 +197,49 @@ export function render(data, options = {}) {
       const sin = Math.sin(angle);
       return Math.abs(sin) < 0.1 ? 'middle' : sin > 0 ? 'hanging' : 'alphabetic';
     })
-    .style('font-size', 'var(--fs-xs)')
-    .style('fill', 'var(--color-text-secondary)')
-    .style('font-weight', 'var(--fw-medium)')
-    .text(d => d.label);
+    .style('font-size', 'var(--fs-xs)');
+
+  const updateAxisLabels = (regionKey) => {
+    let activeKeys = legend.getActive();
+    if (!activeKeys || activeKeys.size === 0) {
+      activeKeys = new Set(regionNames);
+    }
+    
+    const activeData = regionData.filter(r => activeKeys.has(r.region));
+    const activeAverages = {};
+    METRICS.forEach(m => {
+      activeAverages[m.key] = activeData.length > 0 ? d3.mean(activeData, d => d[m.key]) : 0;
+    });
+
+    axisLabelsSelection.each(function(d) {
+      let val;
+      if (regionKey) {
+        const rData = regionData.find(r => r.region === regionKey);
+        val = rData ? rData[d.key] : activeAverages[d.key];
+      } else {
+        val = activeAverages[d.key];
+      }
+      
+      const el = d3.select(this);
+      el.selectAll('*').remove();
+      
+      el.append('tspan')
+        .attr('x', el.attr('x'))
+        .attr('dy', '-0.5em')
+        .style('fill', 'var(--color-text-secondary)')
+        .style('font-weight', 'var(--fw-medium)')
+        .text(d.label);
+        
+      el.append('tspan')
+        .attr('x', el.attr('x'))
+        .attr('dy', '1.2em')
+        .style('fill', regionKey ? regionColor(regionKey) : 'var(--color-text-primary)')
+        .style('font-weight', 'var(--fw-bold)')
+        .text(d.format(val));
+    });
+  };
+
+  updateAxisLabels(null);
 
   // 5. Draw radar polygons
   const getRadarPath = (d) => {
@@ -259,6 +300,8 @@ export function render(data, options = {}) {
       dotGroup.selectAll('.radar-dot')
         .filter(dd => dd.region === key)
         .raise();
+        
+      updateAxisLabels(key);
     })
     .on('mouseleave', function() {
       resetHighlight();
@@ -322,6 +365,8 @@ export function render(data, options = {}) {
       .style('opacity', d => d.region === region ? 1.0 : 0.1)
       .filter(d => d.region === region)
       .raise();
+      
+    updateAxisLabels(region);
   };
 
   const resetHighlight = () => {
@@ -335,6 +380,8 @@ export function render(data, options = {}) {
     dotGroup.selectAll('.radar-dot')
       .style('opacity', 1.0)
       .style('opacity', d => activeKeys.has(d.region) ? 1 : 0);
+      
+    updateAxisLabels(null);
   };
 
   // Bind tooltip to polygon hover
@@ -399,6 +446,8 @@ export function render(data, options = {}) {
         .transition().duration(300)
         .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
         .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
+        
+      updateAxisLabels(null);
     },
     null,
     (key, isHovering) => {
@@ -422,6 +471,8 @@ export function render(data, options = {}) {
         dotGroup.selectAll('.radar-dot')
           .filter(d => d.region === key)
           .raise();
+          
+        updateAxisLabels(key);
       } else {
         // Restore state based on active items
         resetHighlight();
