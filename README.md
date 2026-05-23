@@ -59,7 +59,7 @@ weather-visualization/
 │   │   ├── task09-heatmapChart.js
 │   │   ├── task10-scatterChart.js
 │   │   ├── task11-multiLineChart.js
-│   │   ├── task12-simpleScatter.js
+│   │   ├── task12-dualAxis.js
 │   │   └── task13-uvChoropleth.js
 │   └── components/             # Reusable UI components
 │       ├── tooltip.js

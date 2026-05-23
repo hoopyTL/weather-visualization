@@ -6,6 +6,7 @@
  */
 
 import { loadWeatherData, getRegions, getDateExtent } from './dataLoader.js';
+import { getUvRiskLevel, formatDayLengthHours, formatTerrainLabel } from './utils.js';
 
 // --- Chart modules ---
 import * as task01 from './charts/task01-lineChart.js';
@@ -140,7 +141,7 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     if (state.currentPage) {
-      navigateTo(state.currentPage);
+      renderCurrentPage();
     }
   }, 300);
 });
@@ -234,6 +235,7 @@ function navigateTo(pageKey) {
 
     if (pageKey === 'uv_dashboard') {
       currentData = getUvDashboardFilteredData(currentFilters);
+      updateUvDashboardKpis(currentData);
     }
 
     page.tasks.forEach(task => {
@@ -241,6 +243,56 @@ function navigateTo(pageKey) {
       task.module.render(currentData, currentFilters);
     });
   }
+}
+
+/**
+ * Re-render charts on the active page without re-init or nav rebuild (e.g. resize).
+ */
+function renderCurrentPage() {
+  const page = PAGES[state.currentPage];
+  if (!page) return;
+
+  let currentData = state.data;
+  const currentFilters = state.currentPage === 'uv_dashboard'
+    ? (state.filters.uv_dashboard || {})
+    : state.filters;
+
+  if (state.currentPage === 'uv_dashboard') {
+    currentData = getUvDashboardFilteredData(currentFilters);
+    updateUvDashboardKpis(currentData);
+  }
+
+  page.tasks.forEach(task => {
+    if (task.module.render) {
+      task.module.render(currentData, currentFilters);
+    }
+  });
+}
+
+function updateUvDashboardKpis(data) {
+  const valueEl = document.getElementById('kpi-max-uv-value');
+  const badgeEl = document.getElementById('kpi-max-uv-badge');
+  const daylightEl = document.getElementById('kpi-avg-daylight-value');
+  if (!valueEl || !badgeEl || !daylightEl) return;
+
+  if (!data?.length) {
+    valueEl.textContent = '—';
+    badgeEl.textContent = '';
+    badgeEl.style.display = 'none';
+    daylightEl.textContent = '—';
+    return;
+  }
+
+  const maxUv = d3.max(data, d => d.uv);
+  const avgDayLength = d3.mean(data, d => d.dayLengthHours);
+  const risk = getUvRiskLevel(maxUv);
+
+  valueEl.textContent = maxUv != null && !isNaN(maxUv) ? maxUv.toFixed(1) : '—';
+  badgeEl.textContent = risk.label;
+  badgeEl.style.display = 'inline';
+  badgeEl.style.color = risk.color;
+  badgeEl.style.background = risk.bg;
+  daylightEl.textContent = formatDayLengthHours(avgDayLength);
 }
 
 function setupGlobalFilters() {
@@ -273,7 +325,7 @@ function setupGlobalFilters() {
   terrains.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t;
-    opt.textContent = t;
+    opt.textContent = formatTerrainLabel(t);
     selectTerrain.appendChild(opt);
   });
 
@@ -337,6 +389,7 @@ function setupGlobalFilters() {
     if (state.currentPage === 'uv_dashboard') {
       const page = PAGES['uv_dashboard'];
       const filteredData = getUvDashboardFilteredData(state.filters.uv_dashboard);
+      updateUvDashboardKpis(filteredData);
 
       page.tasks.forEach(task => {
         // Render with filtered data
@@ -372,6 +425,18 @@ function setupGlobalFilters() {
     updateFilters();
   });
   selectMonth.addEventListener('change', updateFilters);
+
+  const btnReset = document.getElementById('btn-reset-filters');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      selectRegion.value = 'All';
+      selectTerrain.value = 'All';
+      populateProvinces('All', 'All');
+      selectProvince.value = 'All';
+      selectMonth.value = 'All';
+      updateFilters();
+    });
+  }
 }
 
 function getUvDashboardFilteredData(filters = {}) {

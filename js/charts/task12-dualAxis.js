@@ -1,5 +1,5 @@
 /**
- * task12-dualAxis.js – UV & Giờ nắng (Dual-Axis with Action Alert)
+ * task12-dualAxis.js – UV & Thời lượng ban ngày (Dual-Axis)
  *
  * Chart type : Dual Axis (Bar + Line)
  * X-axis     : Time (Days if month selected, else Months)
@@ -11,42 +11,37 @@ import { Tooltip } from '../components/tooltip.js';
 import { formatUV } from '../utils.js';
 
 const CONTAINER = '#chart-task12';
+const CHART_HEIGHT = 360;
+const BAR_HOVER_LIFT = 6;
 
 const MARGIN = { top: 40, right: 60, bottom: 40, left: 60 };
 
 const tooltip = new Tooltip();
-let _cachedData = [];
-let _cachedOpts = {};
 
 export function init() {
-  console.log('📊 Task 12 – Dual Axis initialized');
+  const controlsEl = document.getElementById('task12-controls');
+  if (controlsEl) controlsEl.innerHTML = '';
 }
 
 export function render(data, options = {}) {
-  _cachedData = data;
-  _cachedOpts = options;
-
   const el = document.querySelector(CONTAINER);
-  
+
   if (!el || !data?.length) {
-    _showPlaceholder(' ', 'Không có dữ liệu');
+    _showPlaceholder('☀️', 'Không có dữ liệu');
     return;
   }
 
-  // 1. Determine Time Grouping
   const isMonthFiltered = options.month && options.month !== 'All';
-  
+
   const groupsMap = {};
   data.forEach(d => {
     if (!d.date) return;
     let key, label;
-    
+
     if (isMonthFiltered) {
-      // Group by Day
       key = d.date.getDate();
       label = `Ngày ${key}`;
     } else {
-      // Group by Month (YYYY-MM)
       const y = d.date.getFullYear();
       const m = String(d.date.getMonth() + 1).padStart(2, '0');
       key = `${y}-${m}`;
@@ -56,30 +51,32 @@ export function render(data, options = {}) {
     if (!groupsMap[key]) {
       groupsMap[key] = { key, label, maxUV: -Infinity, totalDayLength: 0, count: 0 };
     }
-    
+
     groupsMap[key].maxUV = Math.max(groupsMap[key].maxUV, d.uv);
     groupsMap[key].totalDayLength += d.dayLengthHours;
     groupsMap[key].count++;
   });
 
-  let aggregated = Object.values(groupsMap).map(g => ({
+  const aggregated = Object.values(groupsMap).map(g => ({
     key: g.key,
     label: g.label,
     uv: g.maxUV === -Infinity ? 0 : g.maxUV,
-    dayLength: g.totalDayLength / g.count
+    dayLength: g.totalDayLength / g.count,
   }));
 
-  // Sort by time
   if (isMonthFiltered) {
-    aggregated.sort((a, b) => a.key - b.key); // Numeric sort for days
+    aggregated.sort((a, b) => a.key - b.key);
   } else {
-    aggregated.sort((a, b) => a.key.localeCompare(b.key)); // String sort for YYYY-MM
+    aggregated.sort((a, b) => String(a.key).localeCompare(String(b.key)));
   }
 
-  // 2. Setup SVG
   el.innerHTML = '';
+  el.style.height = '100%';
+  el.style.minHeight = `${CHART_HEIGHT}px`;
+  el.style.maxHeight = `${CHART_HEIGHT}px`;
+  el.style.overflow = 'hidden';
   const W = el.clientWidth || 720;
-  const H = el.clientHeight > 200 ? el.clientHeight : 360;
+  const H = CHART_HEIGHT;
   const w = W - MARGIN.left - MARGIN.right;
   const h = H - MARGIN.top - MARGIN.bottom;
 
@@ -89,62 +86,55 @@ export function render(data, options = {}) {
   const g = svg.append('g')
     .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-  // 3. Scales
   const x = d3.scaleBand()
     .domain(aggregated.map(d => d.key))
     .range([0, w])
     .padding(0.3);
 
-  // Left Y (UV)
   const maxUVValue = d3.max(aggregated, d => d.uv) || 15;
   const yLeft = d3.scaleLinear()
     .domain([0, Math.max(12, maxUVValue + 2)])
     .range([h, 0])
     .nice();
 
-  // Right Y (Day Length)
   const [minDL, maxDL] = d3.extent(aggregated, d => d.dayLength);
   const yRight = d3.scaleLinear()
     .domain([Math.max(0, (minDL || 10) - 1), (maxDL || 14) + 1])
     .range([h, 0])
     .nice();
 
-  // Color scale for UV (synced with Map)
   const uvColor = d3.scaleSequential(d3.interpolateYlOrRd).domain([5, 10]);
 
-  // 4. Draw Axes
-  // X Axis
   g.append('g')
     .attr('class', 'axis x-axis')
     .attr('transform', `translate(0,${h})`)
     .call(d3.axisBottom(x).tickFormat(d => {
-      if (isMonthFiltered) return d; // Day
-      return parseInt(d.split('-')[1]); // Month
+      if (isMonthFiltered) return d;
+      return parseInt(String(d).split('-')[1]);
     }))
     .call(ax => ax.select('.domain').remove())
     .selectAll('text')
     .attr('fill', 'var(--color-text-muted)')
     .attr('font-size', 11);
-    
+
   g.append('text')
-    .attr('x', w/2)
+    .attr('x', w / 2)
     .attr('y', h + 35)
     .attr('text-anchor', 'middle')
     .attr('fill', 'var(--color-text-muted)')
     .attr('font-size', 12)
     .text(isMonthFiltered ? 'Ngày trong tháng' : 'Tháng');
 
-  // Left Y Axis
   g.append('g')
     .attr('class', 'axis y-axis-left')
     .call(d3.axisLeft(yLeft).ticks(5))
     .call(ax => ax.select('.domain').remove())
     .selectAll('text')
     .attr('fill', 'var(--color-text-muted)');
-    
+
   g.append('text')
     .attr('transform', 'rotate(-90)')
-    .attr('x', -h/2)
+    .attr('x', -h / 2)
     .attr('y', -40)
     .attr('text-anchor', 'middle')
     .attr('fill', 'var(--color-text)')
@@ -152,7 +142,6 @@ export function render(data, options = {}) {
     .attr('font-weight', '600')
     .text('Chỉ số UV (Cột)');
 
-  // Right Y Axis
   g.append('g')
     .attr('class', 'axis y-axis-right')
     .attr('transform', `translate(${w},0)`)
@@ -160,10 +149,10 @@ export function render(data, options = {}) {
     .call(ax => ax.select('.domain').remove())
     .selectAll('text')
     .attr('fill', 'var(--color-text-muted)');
-    
+
   g.append('text')
     .attr('transform', `translate(${w}, 0) rotate(90)`)
-    .attr('x', h/2)
+    .attr('x', h / 2)
     .attr('y', -45)
     .attr('text-anchor', 'middle')
     .attr('fill', '#38bdf8')
@@ -171,7 +160,17 @@ export function render(data, options = {}) {
     .attr('font-weight', '600')
     .text('Giờ nắng (Đường)');
 
-  // 5. Draw Bars (UV)
+  const barY = d => yLeft(d.uv);
+  const barH = d => h - yLeft(d.uv);
+
+  const resetBars = (selection) => {
+    selection
+      .transition('bar-hover').duration(150).ease(d3.easeCubicOut)
+      .attr('opacity', 0.8)
+      .attr('y', barY)
+      .attr('height', barH);
+  };
+
   g.selectAll('.bar')
     .data(aggregated)
     .join('rect')
@@ -183,13 +182,22 @@ export function render(data, options = {}) {
     .attr('opacity', 0.8)
     .attr('y', h)
     .attr('height', 0)
-    .on('mouseover', function(event, d) {
-      g.selectAll('.bar').attr('opacity', 0.3);
-      d3.select(this).attr('opacity', 1);
-      
+    .on('mouseover', function (event, d) {
+      g.selectAll('.bar')
+        .transition('bar-hover').duration(150).ease(d3.easeCubicOut)
+        .attr('opacity', 0.35)
+        .attr('y', barY)
+        .attr('height', barH);
+
+      d3.select(this)
+        .transition('bar-hover').duration(150).ease(d3.easeCubicOut)
+        .attr('opacity', 1)
+        .attr('y', barY(d) - BAR_HOVER_LIFT)
+        .attr('height', barH(d) + BAR_HOVER_LIFT);
+
       g.selectAll('.dot').attr('opacity', 0.3);
       g.selectAll('.dot').filter(dotData => dotData.key === d.key).attr('opacity', 1).attr('r', 6);
-      
+
       const html = `
         <div class="chart-tooltip__title">${d.label}</div>
         <div class="chart-tooltip__divider"></div>
@@ -198,7 +206,7 @@ export function render(data, options = {}) {
             <span class="chart-tooltip__color-dot" style="background:${uvColor(d.uv)}"></span>
             Chỉ số UV
           </span>
-          <span class="chart-tooltip__value">${d.uv.toFixed(1)}</span>
+          <span class="chart-tooltip__value">${formatUV(d.uv)}</span>
         </div>
         <div class="chart-tooltip__row">
           <span class="chart-tooltip__label">
@@ -211,19 +219,18 @@ export function render(data, options = {}) {
       tooltip.show(event, html);
     })
     .on('mousemove', event => tooltip.move(event))
-    .on('mouseleave', function() {
-      g.selectAll('.bar').attr('opacity', 0.8);
+    .on('mouseleave', function () {
+      resetBars(g.selectAll('.bar'));
       g.selectAll('.dot').attr('opacity', 1).attr('r', 4);
       tooltip.hide();
     })
-    .transition()
+    .transition('bar-enter')
     .duration(800)
     .delay((d, i) => i * 30)
     .ease(d3.easeCubicOut)
-    .attr('y', d => yLeft(d.uv))
-    .attr('height', d => h - yLeft(d.uv));
+    .attr('y', barY)
+    .attr('height', barH);
 
-  // 6. Draw Line (Day Length)
   const line = d3.line()
     .x(d => x(d.key) + x.bandwidth() / 2)
     .y(d => yRight(d.dayLength))
@@ -236,17 +243,15 @@ export function render(data, options = {}) {
     .attr('stroke-width', 3)
     .attr('d', line);
 
-  // Line animation
   const totalLength = path.node().getTotalLength();
   path
-    .attr('stroke-dasharray', totalLength + ' ' + totalLength)
+    .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
     .attr('stroke-dashoffset', totalLength)
     .transition()
     .duration(1500)
     .ease(d3.easeCubicOut)
     .attr('stroke-dashoffset', 0);
 
-  // Draw Dots
   g.selectAll('.dot')
     .data(aggregated)
     .join('circle')
@@ -262,7 +267,6 @@ export function render(data, options = {}) {
     .duration(500)
     .delay((d, i) => 800 + i * 30)
     .attr('r', 4);
-
 }
 
 function _showPlaceholder(icon, label) {
