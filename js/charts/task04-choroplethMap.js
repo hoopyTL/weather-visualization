@@ -11,25 +11,32 @@
 import { createTempScale, formatTemp, formatNumber } from '../utils.js';
 import { Tooltip } from '../components/tooltip.js';
 
+// Khai báo vùng chứa biểu đồ và vùng chứa bộ lọc.
 const CONTAINER = '#chart-task04';
 const CONTROLS = '#task04-controls';
+
+// Tạo tooltip để hiển thị thông tin khi rê chuột.
 const tooltip = new Tooltip();
 
+// Lưu trạng thái dữ liệu và bộ lọc hiện tại.
 let currentData = [];
 let selectedRegion = '';
 let selectedMonth = '';
 let selectedMetric = 'avgTemp';
 
+// Khai báo các chỉ số nhiệt độ có thể chọn.
 const METRICS = {
   avgTemp: { label: 'Nhiệt độ trung bình', short: 'TB', field: 'avgTemp' },
   maxTemp: { label: 'Nhiệt độ cao nhất TB', short: 'Cao nhất', field: 'maxTemp' },
   minTemp: { label: 'Nhiệt độ thấp nhất TB', short: 'Thấp nhất', field: 'minTemp' },
 };
 
+// Khởi tạo Task 04 và báo trong console rằng biểu đồ đã sẵn sàng.
 export function init() {
   console.log('🗺️ Task 04 – Bản đồ nhiệt độ trung bình theo tỉnh initialized');
 }
 
+// Hàm chính nhận dữ liệu, tạo bộ lọc, xử lý dữ liệu và gọi hàm vẽ bản đồ.
 export function render(data, options = {}) {
   currentData = Array.isArray(data) ? data : [];
 
@@ -49,6 +56,7 @@ export function render(data, options = {}) {
   drawTemperatureMap(provinceData, currentData);
 }
 
+// Tạo các bộ lọc cho biểu đồ gồm: chỉ số nhiệt độ, vùng và tháng.
 function buildControls(data) {
   const controls = document.querySelector(CONTROLS);
   if (!controls || controls.dataset.ready === 'true') return;
@@ -100,6 +108,7 @@ function buildControls(data) {
   controls.dataset.ready = 'true';
 }
 
+// Lọc dữ liệu theo bộ lọc hiện tại và gom dữ liệu theo từng tỉnh/thành.
 function prepareProvinceTemperatureData(data, { region, month, metric }) {
   const metricField = METRICS[metric]?.field || 'avgTemp';
 
@@ -130,6 +139,7 @@ function prepareProvinceTemperatureData(data, { region, month, metric }) {
     .sort((a, b) => d3.descending(a.value, b.value));
 }
 
+// Vẽ bản đồ điểm nhiệt độ bằng SVG, mỗi tỉnh/thành là một điểm tròn.
 function drawTemperatureMap(provinceData, allData) {
   const container = document.querySelector(CONTAINER);
   if (!container) return;
@@ -149,25 +159,14 @@ function drawTemperatureMap(provinceData, allData) {
   const lonExtent = padExtent(d3.extent(validAll, d => d.lon), 0.7);
   const latExtent = padExtent(d3.extent(validAll, d => d.lat), 0.8);
 
-  // const x = d3.scaleLinear()
-  //   .domain(lonExtent)
-  //   .range([margin.left, width - margin.right]);
-
-  // const y = d3.scaleLinear()
-  //   .domain(latExtent)
-  //   .range([height - margin.bottom, margin.top]);
-
-  // Giữ tỷ lệ bản đồ để Việt Nam không bị kéo ngang quá nhiều
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
   const lonRange = lonExtent[1] - lonExtent[0];
   const latRange = latExtent[1] - latExtent[0];
 
-  // Việt Nam dài theo chiều Bắc - Nam, nên map nên hẹp ngang hơn
   const geoRatio = lonRange / latRange;
 
-  // Tăng nhẹ chiều ngang để điểm không bị quá sát nhau
   const aspectBoost = 1.15;
 
   let plotHeight = innerHeight;
@@ -278,6 +277,7 @@ function drawTemperatureMap(provinceData, allData) {
   svg.call(zoom);
 }
 
+// Hiển thị tooltip khi rê chuột vào một tỉnh/thành trên bản đồ.
 function showProvinceTooltip(event, d) {
   tooltip.show(event, Tooltip.buildHTML(`🌡️ ${escapeHTML(d.name)}`, [
     { label: 'Vùng', value: escapeHTML(d.region || 'Không rõ') },
@@ -288,6 +288,7 @@ function showProvinceTooltip(event, d) {
   ]));
 }
 
+// Vẽ lưới tọa độ nền bản đồ để người xem dễ định hướng vị trí.
 function drawCoordinateGrid(g, x, y, lonExtent, latExtent, margin, width, height) {
   const lonTicks = x.ticks(5);
   const latTicks = y.ticks(6);
@@ -331,6 +332,7 @@ function drawCoordinateGrid(g, x, y, lonExtent, latExtent, margin, width, height
     .text('Nam');
 }
 
+// Vẽ chú giải màu để thể hiện mức nhiệt độ tương ứng với từng màu.
 function drawTempLegend(svg, color, tempExtent, width, height, margin) {
   const legendWidth = Math.min(240, width * 0.42);
   const legendHeight = 10;
@@ -381,6 +383,7 @@ function drawTempLegend(svg, color, tempExtent, width, height, margin) {
     .call(g => g.select('.domain').remove());
 }
 
+// Hiển thị ghi chú dưới bản đồ như số tỉnh/thành, thời gian lọc và hướng dẫn zoom.
 function drawMapNote(svg, width, height, pointCount) {
   const label = selectedMonth
     ? `${pointCount} tỉnh/thành • ${formatMonthLabel(selectedMonth)} • kéo để di chuyển, cuộn để zoom`
@@ -394,10 +397,12 @@ function drawMapNote(svg, width, height, pointCount) {
     .text(label);
 }
 
+// Kiểm tra một bản ghi có kinh độ và vĩ độ hợp lệ hay không.
 function isValidCoord(d) {
   return Number.isFinite(+d.lat) && Number.isFinite(+d.lon);
 }
 
+// Lấy thông tin tháng từ ngày trong dữ liệu để phục vụ bộ lọc theo tháng.
 function getMonthKey(d) {
   if (d.dateStr) return d.dateStr.slice(0, 7);
   if (d.date instanceof Date && !Number.isNaN(d.date)) {
@@ -406,11 +411,13 @@ function getMonthKey(d) {
   return '';
 }
 
+// Nới rộng khoảng min/max của kinh độ hoặc vĩ độ để bản đồ không bị sát mép.
 function padExtent(extent, pad) {
   const [min, max] = extent;
   return [min - pad, max + pad];
 }
 
+// Chuyển định dạng tháng từ YYYY-MM sang dạng dễ đọc như Tháng 7/2024.
 function formatMonthLabel(monthKey) {
   if (!monthKey) return 'Toàn bộ thời gian';
 
@@ -418,6 +425,7 @@ function formatMonthLabel(monthKey) {
   return `Tháng ${Number(month)}/${year}`;
 }
 
+// Hiển thị thông báo khi không có dữ liệu phù hợp để vẽ biểu đồ.
 function showNoData(message) {
   const el = document.querySelector(CONTAINER);
   if (!el) return;
@@ -425,6 +433,7 @@ function showNoData(message) {
   el.innerHTML = `<div class="no-data">${message}</div>`;
 }
 
+// Làm sạch chuỗi trước khi đưa vào HTML để tránh lỗi hiển thị hoặc chèn mã lạ.
 function escapeHTML(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
