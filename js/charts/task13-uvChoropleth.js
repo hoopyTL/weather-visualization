@@ -78,7 +78,9 @@ function _syncSliderToGlobalFilter() {
   const monthKey = _monthKeyFromIndex();
   if (_currentFilters.month === monthKey || !window.updateGlobalFilter) return;
   _syncingFromSlider = true;
+  window.__t13MonthSyncInProgress = true;
   window.updateGlobalFilter('month', monthKey);
+  window.__t13MonthSyncInProgress = false;
   _syncingFromSlider = false;
 }
 

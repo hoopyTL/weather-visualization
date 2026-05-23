@@ -385,8 +385,10 @@ function setupGlobalFilters() {
     state.filters.uv_dashboard.province = selectProvince.value;
     state.filters.uv_dashboard.month = selectMonth.value;
 
+    const isTask13PlaybackSync = Boolean(window.__t13MonthSyncInProgress);
+
     // Only update if we are currently on the uv_dashboard page
-    if (state.currentPage === 'uv_dashboard') {
+    if (state.currentPage === 'uv_dashboard' && !isTask13PlaybackSync) {
       const page = PAGES['uv_dashboard'];
       const filteredData = getUvDashboardFilteredData(state.filters.uv_dashboard);
       updateUvDashboardKpis(filteredData);
