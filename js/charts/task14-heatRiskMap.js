@@ -14,18 +14,24 @@
 import { formatNumber, formatTemp, regionColor } from '../utils.js';
 import { Tooltip } from '../components/tooltip.js';
 
+// Khai báo vùng chứa biểu đồ và vùng chứa bộ lọc.
 const CONTAINER = '#chart-task14';
 const CONTROLS = '#task14-controls';
+
+// Tạo tooltip để hiện thông tin khi rê chuột.
 const tooltip = new Tooltip();
 
+// Lưu dữ liệu và trạng thái bộ lọc hiện tại.
 let currentData = [];
 let selectedRegion = '';
 let selectedThreshold = 35;
 
+// Khởi tạo Task 14 và báo trong console rằng biểu đồ đã sẵn sàng.
 export function init() {
   console.log('🔥 Task 14 – Nguy cơ nắng nóng theo tỉnh initialized');
 }
 
+// Hàm chính nhận dữ liệu, tạo bộ lọc, xử lý dữ liệu và vẽ bản đồ nắng nóng.
 export function render(data, options = {}) {
   currentData = Array.isArray(data) ? data : [];
 
@@ -44,10 +50,7 @@ export function render(data, options = {}) {
   drawHeatRiskMap(heatData, currentData);
 }
 
-/* ============================================================
-   CONTROLS
-   ============================================================ */
-
+// Tạo bộ lọc theo ngưỡng nhiệt độ và vùng.
 function buildControls(data) {
   const controls = document.querySelector(CONTROLS);
   if (!controls || controls.dataset.ready === 'true') return;
@@ -84,10 +87,8 @@ function buildControls(data) {
   controls.dataset.ready = 'true';
 }
 
-/* ============================================================
-   DATA PREP
-   ============================================================ */
 
+// Lọc dữ liệu và tính số ngày nắng nóng theo từng tỉnh/thành.
 function prepareHeatRiskData(data, { region, threshold }) {
   const filtered = data.filter(d => {
     if (!isValidCoord(d)) return false;
@@ -123,10 +124,7 @@ function prepareHeatRiskData(data, { region, threshold }) {
     .sort((a, b) => d3.descending(a.heatDays, b.heatDays));
 }
 
-/* ============================================================
-   MAIN CHART
-   ============================================================ */
-
+// Vẽ bản đồ nguy cơ nắng nóng, top tỉnh và chú giải màu.
 function drawHeatRiskMap(heatData, allData) {
   const container = document.querySelector(CONTAINER);
   if (!container) return;
@@ -155,22 +153,18 @@ function drawHeatRiskMap(heatData, allData) {
 
   const maxHeatDays = d3.max(heatData, d => d.heatDays) || 1;
 
-  // Chấm vừa phải, không quá to nhưng vẫn nhìn rõ
+  // Tạo thang kích thước điểm theo số ngày nắng nóng.
   const radius = d3.scaleSqrt()
     .domain([0, maxHeatDays])
     .range([4.2, 13.5]);
 
-  /*
-    Màu đậm hơn cho light mode:
-    - Không dùng vàng quá nhạt.
-    - Chấm ít ngày vẫn có màu cam nhạt nhìn rõ.
-    - Chấm nhiều ngày chuyển sang đỏ đậm.
-  */
+  // Tạo thang màu: ít ngày màu cam, nhiều ngày màu đỏ đậm.
   const color = d3.scaleLinear()
     .domain([0, maxHeatDays * 0.45, maxHeatDays])
     .range(['#f59e0b', '#f97316', '#b91c1c'])
     .interpolate(d3.interpolateRgb);
 
+  // Tạo SVG chính để vẽ toàn bộ biểu đồ.
   const svg = d3.select(CONTAINER)
     .append('svg')
     .attr('width', width)
@@ -178,11 +172,6 @@ function drawHeatRiskMap(heatData, allData) {
     .attr('viewBox', `0 0 ${width} ${height}`)
     .attr('preserveAspectRatio', 'xMidYMid meet');
 
-  /*
-    Chia không gian:
-    - Bên trái: bản đồ point map, giữ tỷ lệ chữ S.
-    - Bên phải: panel top tỉnh + legend, không đè lên chấm.
-  */
   const sidePanelWidth = Math.min(330, Math.max(270, width * 0.26));
   const sidePanelGap = 36;
 
@@ -214,17 +203,21 @@ function drawHeatRiskMap(heatData, allData) {
   const plotY0 = mapTop + (mapAreaHeight - plotHeight) / 2;
   const plotY1 = plotY0 + plotHeight;
 
+  // Chuyển kinh độ thành vị trí ngang trên SVG.
   const x = d3.scaleLinear()
     .domain(lonExtent)
     .range([plotX0, plotX1]);
 
+  // Chuyển vĩ độ thành vị trí dọc trên SVG.
   const y = d3.scaleLinear()
     .domain(latExtent)
     .range([plotY1, plotY0]);
 
+  // Tạo lớp riêng để zoom/pan bản đồ.
   const zoomLayer = svg.append('g')
     .attr('class', 'task14-zoom-layer');
 
+  // Vẽ nền khung bản đồ.
   zoomLayer.append('rect')
     .attr('x', plotX0 - 28)
     .attr('y', plotY0 - 24)
@@ -237,6 +230,7 @@ function drawHeatRiskMap(heatData, allData) {
 
   drawCoordinateGrid(zoomLayer, x, y);
 
+  // Vẽ các điểm tỉnh/thành trên bản đồ.
   const points = zoomLayer.append('g')
     .attr('class', 'heat-risk-points')
     .selectAll('circle')
@@ -276,6 +270,7 @@ function drawHeatRiskMap(heatData, allData) {
       tooltip.hide();
     });
 
+  // Tạo hiệu ứng điểm xuất hiện dần.
   points.transition()
     .duration(700)
     .delay((d, i) => i * 7)
@@ -297,6 +292,7 @@ function drawHeatRiskMap(heatData, allData) {
 
   drawMapNote(svg, heatData.length, width, height);
 
+  // Tạo chức năng kéo và zoom bản đồ.
   const zoom = d3.zoom()
     .scaleExtent([1, 8])
     .translateExtent([[0, 0], [width, height]])
@@ -307,10 +303,9 @@ function drawHeatRiskMap(heatData, allData) {
   svg.call(zoom);
 }
 
-/* ============================================================
-   TOOLTIP
-   ============================================================ */
+//TOOLTIP
 
+// Hiển thị tooltip thông tin chi tiết về nắng nóng của từng tỉnh/thành.
 function showHeatTooltip(event, d) {
   tooltip.show(event, Tooltip.buildHTML(`🔥 ${escapeHTML(d.name)}`, [
     {
@@ -345,10 +340,9 @@ function showHeatTooltip(event, d) {
   ]));
 }
 
-/* ============================================================
-   SIDE PANEL: TOP RANKING
-   ============================================================ */
+//: TOP RANKING
 
+// Vẽ bảng top tỉnh có nhiều ngày nắng nóng nhất.
 function drawTopRanking(svg, heatData, panelX, panelY, panelWidth) {
   const topData = heatData
     .filter(d => d.heatDays > 0)
@@ -430,10 +424,8 @@ function drawTopRanking(svg, heatData, panelX, panelY, panelWidth) {
   return panelHeight;
 }
 
-/* ============================================================
-   SIDE PANEL: LEGEND
-   ============================================================ */
 
+// Vẽ chú giải màu thể hiện số ngày nắng nóng.
 function drawHeatLegend(svg, color, maxHeatDays, x0, y0, legendWidth) {
   const legendHeight = 12;
   const gradientId = `task14-heat-gradient-${Math.random().toString(36).slice(2)}`;
@@ -487,10 +479,8 @@ function drawHeatLegend(svg, color, maxHeatDays, x0, y0, legendWidth) {
     );
 }
 
-/* ============================================================
-   MAP DECORATION
-   ============================================================ */
 
+// Vẽ lưới tọa độ và nhãn Bắc/Nam trên bản đồ.
 function drawCoordinateGrid(g, x, y) {
   const lonTicks = x.ticks(5);
   const latTicks = y.ticks(6);
@@ -548,6 +538,7 @@ function drawCoordinateGrid(g, x, y) {
     .text('Nam');
 }
 
+// Hiển thị ghi chú dưới bản đồ về số tỉnh/thành, vùng lọc và hướng dẫn zoom.
 function drawMapNote(svg, pointCount, width, height) {
   const regionText = selectedRegion || 'Tất cả vùng';
 
@@ -559,24 +550,25 @@ function drawMapNote(svg, pointCount, width, height) {
     .text(`${pointCount} tỉnh/thành • ${regionText} • kéo để di chuyển, cuộn để zoom`);
 }
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
 
+// Kiểm tra một bản ghi có kinh độ và vĩ độ hợp lệ hay không.
 function isValidCoord(d) {
   return Number.isFinite(+d.lat) && Number.isFinite(+d.lon);
 }
 
+// Nới rộng khoảng min/max của kinh độ hoặc vĩ độ để bản đồ không bị sát mép.
 function padExtent(extent, pad) {
   const [min, max] = extent;
   return [min - pad, max + pad];
 }
 
+// Rút gọn tên tỉnh/thành nếu tên quá dài.
 function truncateText(text, maxLength) {
   const value = String(text || '');
   return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;
 }
 
+// Hiển thị thông báo khi không có dữ liệu phù hợp để vẽ biểu đồ.
 function showNoData(message) {
   const el = document.querySelector(CONTAINER);
   if (!el) return;
@@ -584,6 +576,7 @@ function showNoData(message) {
   el.innerHTML = `<div class="no-data">${message}</div>`;
 }
 
+// Làm sạch chuỗi trước khi đưa vào HTML để tránh lỗi hiển thị hoặc chèn mã lạ.
 function escapeHTML(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')

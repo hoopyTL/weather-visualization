@@ -14,19 +14,25 @@
 import { regionColor, regionShort, formatNumber } from '../utils.js';
 import { Tooltip } from '../components/tooltip.js';
 
+// Khai báo vùng chứa biểu đồ và vùng chứa bộ lọc.
 const CONTAINER = '#chart-task06';
 const CONTROLS = '#task06-controls';
+
+// Tạo tooltip để hiển thị thông tin khi rê chuột.
 const tooltip = new Tooltip();
 
+// Lưu dữ liệu và trạng thái bộ lọc hiện tại.
 let currentData = [];
 let selectedRegion = '';
 let selectedTerrain = '';
 let activeBarRegion = '';
 
+// Khởi tạo Task 06 và báo trong console rằng biểu đồ đã sẵn sàng.
 export function init() {
   console.log('📍 Task 06 – Phân bố điểm đo theo khu vực initialized');
 }
 
+// Hàm chính nhận dữ liệu, tạo bộ lọc, xử lý dữ liệu và vẽ map + bar chart.
 export function render(data, options = {}) {
   currentData = Array.isArray(data) ? data : [];
 
@@ -49,10 +55,7 @@ export function render(data, options = {}) {
   drawDensityMap(mapStations, allStations, currentData);
 }
 
-/* ============================================================
-   CONTROLS
-   ============================================================ */
-
+// Tạo bộ lọc theo vùng và địa hình cho biểu đồ.
 function buildControls(data) {
   const controls = document.querySelector(CONTROLS);
   if (!controls || controls.dataset.ready === 'true') return;
@@ -93,11 +96,7 @@ function buildControls(data) {
 
   controls.dataset.ready = 'true';
 }
-
-/* ============================================================
-   DATA PREP
-   ============================================================ */
-
+// Lọc dữ liệu theo vùng/địa hình và gom dữ liệu thành 1 điểm đại diện cho mỗi tỉnh.
 function prepareStationData(data, { region, terrain }) {
   const filtered = data.filter(d => {
     if (!isValidCoord(d)) return false;
@@ -124,10 +123,8 @@ function prepareStationData(data, { region, terrain }) {
     .sort((a, b) => d3.ascending(a.name, b.name));
 }
 
-/* ============================================================
-   MAIN CHART
-   ============================================================ */
 
+// Vẽ point map và bar chart phân bố điểm đo theo vùng.
 function drawDensityMap(mapStations, allStations, allData) {
   const container = document.querySelector(CONTAINER);
   if (!container) return;
@@ -322,10 +319,8 @@ function drawDensityMap(mapStations, allStations, allData) {
   drawBarSummary(barSvg, allStations, points, width, barHeight);
 }
 
-/* ============================================================
-   TOOLTIP
-   ============================================================ */
 
+// Hiển thị tooltip thông tin chi tiết của từng điểm đo.
 function showStationTooltip(event, d) {
   tooltip.show(event, Tooltip.buildHTML(`📍 ${escapeHTML(d.name)}`, [
     {
@@ -352,10 +347,9 @@ function showStationTooltip(event, d) {
   ]));
 }
 
-/* ============================================================
-   BAR CHART
-   ============================================================ */
+// BAR CHART
 
+// Vẽ biểu đồ thanh ngang thể hiện số điểm đo theo từng vùng.
 function drawBarSummary(svg, stations, points, width, height) {
   const counts = Array.from(
     d3.rollup(
@@ -530,11 +524,7 @@ function drawBarSummary(svg, stations, points, width, height) {
       render(currentData);
     });
 }
-
-/* ============================================================
-   MAP DECORATION
-   ============================================================ */
-
+// Vẽ lưới tọa độ và nhãn Bắc/Nam trên bản đồ.
 function drawCoordinateGrid(g, x, y) {
   const lonTicks = x.ticks(5);
   const latTicks = y.ticks(6);
@@ -592,35 +582,32 @@ function drawCoordinateGrid(g, x, y) {
     .text('Nam');
 }
 
-/* ============================================================
-   INTERACTION HELPERS
-   ============================================================ */
-
+// Làm nổi bật các điểm thuộc cùng một vùng.
 function highlightRegion(points, region) {
   points
     .style('fill-opacity', d => d.region === region ? 0.96 : 0.16)
     .style('stroke-opacity', d => d.region === region ? 1 : 0.2);
 }
 
+// Đưa các điểm về trạng thái hiển thị ban đầu.
 function resetHighlight(points) {
   points
     .style('fill-opacity', 0.88)
     .style('stroke-opacity', 1);
 }
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
+// Kiểm tra một bản ghi có kinh độ và vĩ độ hợp lệ hay không.
 function isValidCoord(d) {
   return Number.isFinite(+d.lat) && Number.isFinite(+d.lon);
 }
 
+// Nới rộng khoảng min/max của kinh độ hoặc vĩ độ để bản đồ không bị sát mép.
 function padExtent(extent, pad) {
   const [min, max] = extent;
   return [min - pad, max + pad];
 }
 
+// Hiển thị thông báo khi không có dữ liệu phù hợp để vẽ biểu đồ.
 function showNoData(message) {
   const el = document.querySelector(CONTAINER);
   if (!el) return;
@@ -628,6 +615,7 @@ function showNoData(message) {
   el.innerHTML = `<div class="no-data">${message}</div>`;
 }
 
+// Làm sạch chuỗi trước khi đưa vào HTML để tránh lỗi hiển thị hoặc chèn mã lạ.
 function escapeHTML(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
