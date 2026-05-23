@@ -141,7 +141,7 @@ export function init() {
     .style("font-size", "16px")
     .style("font-weight", "bold")
     .attr("fill", "#333")
-    .text("Ảnh hưởng của Thời lượng ban ngày đến Nhiệt độ & Độ ẩm");
+    .text("Ảnh hưởng của Thời lượng ban ngày đến Nhiệt độ");
 
   const regions = Object.keys(REGION_COLORS);
   const legendItems = legendGroup
