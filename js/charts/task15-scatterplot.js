@@ -368,6 +368,7 @@ export function render(data, options = {}) {
             value: regionShort(d.region),
             color: regionColor(d.region),
           },
+          { label: "Địa hình", value: d.terrain },
           { label: "Ngày", value: d.dateStr },
           { label: "Trạng thái", value: d.condition },
           { label: "Thời lượng ngày", value: formatHours(d.dayLengthHours) },
