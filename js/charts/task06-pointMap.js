@@ -1,5 +1,5 @@
 /**
- * Task 06 – Measurement Density Map: Phân bố điểm đo theo khu vực
+ * Task 06 – Point Map: Phân bố điểm đo theo khu vực
  *
  * Dataset hiện có 1 tọa độ đại diện cho mỗi tỉnh/thành.
  * Vì vậy “điểm đo” được hiểu là mỗi tỉnh/thành có 1 điểm quan trắc đại diện.
@@ -9,10 +9,6 @@
  *
  * Chart phụ:
  *   - Horizontal bar chart: số điểm đo theo vùng
- *
- * Tương tác thêm:
- *   - Click vào bar vùng để lọc điểm trên bản đồ theo vùng đó.
- *   - Click lại bar đang chọn để bỏ lọc.
  */
 
 import { regionColor, regionShort, formatNumber } from '../utils.js';
