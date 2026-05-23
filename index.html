@@ -31,7 +31,7 @@
   <!-- ========================================================
        APP SHELL
        ======================================================== -->
-  <div class="app">
+  <div class="app sidebar-collapsed">
 
     <!-- ---- SIDEBAR ---- -->
     <aside class="sidebar" id="sidebar">
@@ -56,6 +56,9 @@
     <!-- ---- HEADER ---- -->
     <header class="header">
       <div class="header__brand">
+        <button id="btn-toggle-sidebar" style="background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; margin-right:12px; color:var(--color-text-primary); transition:all 0.2s;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <h1 class="header__title">Vietnam Weather Dashboard</h1>
       </div>
       <div class="header__controls" id="global-controls">
@@ -124,9 +127,9 @@
                 <h3 class="card__title">🕸️ Task 3 – Radar thời tiết vùng</h3>
                 <p class="card__subtitle">So sánh đa chiều: nhiệt độ, gió, mưa, ẩm, UV</p>
               </div>
-              <div id="task03-controls"></div>
             </div>
             <div class="card__body" id="chart-task03"></div>
+            <div id="task03-controls"></div>
           </div>
 
         </div>
@@ -151,7 +154,7 @@
           </div>
 
           <!-- Task 05 -->
-          <div class="card">
+          <div class="card card--full">
             <div class="card__header">
               <div>
                 <h3 class="card__title">↔️ Task 5 – Ven biển vs Nội địa</h3>
@@ -200,9 +203,9 @@
                 <h3 class="card__title">🍩 Task 7 – Tần suất thời tiết</h3>
                 <p class="card__subtitle">Phân bố các trạng thái thời tiết</p>
               </div>
-              <div id="task07-controls"></div>
             </div>
             <div class="card__body" id="chart-task07"></div>
+            <div id="task07-controls"></div>
           </div>
 
           <!-- Task 08 -->
@@ -250,45 +253,7 @@
             <div class="card__body" id="chart-task10"></div>
           </div>
 
-          <!-- Task 11 -->
-          <div class="card card--full">
-            <div class="card__header">
-              <div>
-                <h3 class="card__title">🌅 Task 11 – Độ dài ban ngày</h3>
-                <p class="card__subtitle">Biến thiên thời lượng ban ngày theo vĩ độ</p>
-              </div>
-              <div id="task11-controls" style="display:flex; gap:12px; align-items:center;">
-                <button id="btn-national-t11" style="background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);border-radius:20px;padding:6px 16px;cursor:pointer;font-family:var(--font-primary);font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;transition:0.2s;">
-                  Chỉ xem Toàn quốc
-                </button>
-              </div>
-            </div>
-            <div class="card__body" id="chart-task11"></div>
-          </div>
 
-          <!-- Task 12 -->
-          <div class="card card--full">
-            <div class="card__header">
-              <div>
-                <h3 class="card__title">☀️ Task 12 – Ban ngày vs UV</h3>
-                <p class="card__subtitle">Mối quan hệ giữa độ dài ban ngày và chỉ số UV</p>
-              </div>
-              <div id="task12-controls"></div>
-            </div>
-            <div class="card__body" id="chart-task12"></div>
-          </div>
-
-          <!-- Task 13 – full width -->
-          <div class="card card--full">
-            <div class="card__header">
-              <div>
-                <h3 class="card__title">🗺️ Task 13 – Bản đồ phân bố UV</h3>
-                <p class="card__subtitle">Sự thay đổi phân bố UV theo không gian và thời gian</p>
-              </div>
-              <div id="task13-controls"></div>
-            </div>
-            <div class="card__body" id="chart-task13"></div>
-          </div>
 
           <!-- Task 15 -->
           <div class="card card--full">
@@ -304,6 +269,123 @@
 
         </div>
       </section>
+
+      <!-- ========================================
+           PAGE: UV DASHBOARD DRAFT (Tasks 11, 12, 13)
+           ======================================== -->
+      <section id="page-uv_dashboard" class="page-section uv-dashboard">
+        
+        <!-- Filter Bar -->
+        <div class="uv-filter-bar">
+          <div class="uv-filter-bar__intro">
+            <div class="uv-filter-bar__heading">
+              <span class="uv-filter-bar__title">Bộ lọc</span>
+            </div>
+          </div>
+          <div class="uv-filter-bar__fields">
+            <div class="uv-filter-field">
+              <label class="uv-filter-field__label" for="filter-region">Khu vực</label>
+              <div class="select-wrapper">
+                <select id="filter-region" class="select">
+                  <option value="All">Tất cả các vùng</option>
+                </select>
+              </div>
+            </div>
+            <div class="uv-filter-field">
+              <label class="uv-filter-field__label" for="filter-terrain">Địa hình</label>
+              <div class="select-wrapper">
+                <select id="filter-terrain" class="select">
+                  <option value="All">Tất cả địa hình</option>
+                </select>
+              </div>
+            </div>
+            <div class="uv-filter-field">
+              <label class="uv-filter-field__label" for="filter-province">Tỉnh / Thành phố</label>
+              <div class="select-wrapper">
+                <select id="filter-province" class="select select--wide">
+                  <option value="All">Tất cả tỉnh thành</option>
+                </select>
+              </div>
+            </div>
+            <div class="uv-filter-field">
+              <label class="uv-filter-field__label" for="filter-month">Thời điểm</label>
+              <div class="select-wrapper">
+                <select id="filter-month" class="select">
+                  <option value="All">Tất cả thời gian</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="uv-filter-bar__actions">
+            <button type="button" id="btn-reset-filters" class="btn btn--reset" title="Xóa tất cả bộ lọc">
+              <span class="btn--reset__icon" aria-hidden="true">↺</span>
+              Đặt lại
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="uv-kpi-row">
+          <div class="uv-kpi-card uv-kpi-card--uv">
+            <div class="uv-kpi-card__label">Chỉ số UV Cực đại</div>
+            <div class="uv-kpi-card__value">
+              <span id="kpi-max-uv-value">—</span>
+              <span id="kpi-max-uv-badge" class="uv-kpi-card__badge"></span>
+            </div>
+          </div>
+          <div class="uv-kpi-card uv-kpi-card--daylight">
+            <div class="uv-kpi-card__label">Thời lượng ban ngày TB</div>
+            <div class="uv-kpi-card__value">
+              <span id="kpi-avg-daylight-value">—</span>
+              <span class="uv-kpi-card__icon" aria-hidden="true">☀️</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart grid -->
+        <div class="uv-dashboard-grid">
+          <!-- Task 13: Map -->
+          <div class="card uv-dashboard-card">
+            <div class="card__header uv-dashboard-card__header">
+              <div class="uv-dashboard-card__titles">
+                <h3 class="card__title">Bản đồ phân bố UV</h3>
+                <p class="card__subtitle">Phân bố UV theo không gian và thời gian</p>
+              </div>
+              <div id="task13-controls" class="uv-dashboard-card__controls"></div>
+            </div>
+            <div class="card__body uv-chart-panel" id="chart-task13"></div>
+          </div>
+
+          <!-- Task 11: Multi-line -->
+          <div class="card uv-dashboard-card">
+            <div class="card__header uv-dashboard-card__header">
+              <div class="uv-dashboard-card__titles">
+                <h3 class="card__title">Độ dài ban ngày</h3>
+                <p class="card__subtitle">Biến thiên thời lượng ban ngày theo vùng và thời gian</p>
+              </div>
+              <div id="task11-controls" class="uv-dashboard-card__controls">
+                <button type="button" id="btn-national-t11" class="btn btn--compact" title="Ẩn các vùng, chỉ hiện đường trung bình toàn quốc">
+                  Chỉ xem toàn quốc
+                </button>
+              </div>
+            </div>
+            <div class="card__body uv-chart-panel" id="chart-task11"></div>
+          </div>
+
+          <!-- Task 12: Dual-Axis (full width) -->
+          <div class="card uv-dashboard-card uv-dashboard-card--wide">
+            <div class="card__header uv-dashboard-card__header">
+              <div class="uv-dashboard-card__titles">
+                <h3 class="card__title">UV & Thời lượng ban ngày</h3>
+                <p class="card__subtitle">Diễn biến chỉ số UV (Cột) và Thời lượng ban ngày (Đường)</p>
+              </div>
+              <div id="task12-controls" class="uv-dashboard-card__controls"></div>
+            </div>
+            <div class="card__body uv-chart-panel uv-chart-panel--wide">
+              <div id="chart-task12"></div>
+            </div>
+          </div>
+        </div>
 
     </main>
 

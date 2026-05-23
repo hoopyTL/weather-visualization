@@ -36,6 +36,22 @@ export const TERRAIN_COLORS = {
   'miền núi': '#ff8a65',
 };
 
+/** Display labels (viết hoa chữ cái đầu) — value trong data giữ nguyên */
+export const TERRAIN_LABELS = {
+  'ven biển': 'Ven biển',
+  'đồng bằng': 'Đồng bằng',
+  'miền núi': 'Miền núi',
+};
+
+/**
+ * @param {string} terrain — raw key from dataset
+ * @returns {string}
+ */
+export function formatTerrainLabel(terrain) {
+  if (!terrain) return '—';
+  return TERRAIN_LABELS[terrain] || terrain;
+}
+
 /**
  * Get color for a region name
  * @param {string} region
@@ -113,7 +129,31 @@ export const formatWind = (v) => `${v.toFixed(1)} km/h`;
 export const formatPrecip = (v) => `${v.toFixed(1)} mm`;
 
 /** Format UV index */
-export const formatUV = (v) => `${v.toFixed(1)}`;
+export const formatUV = (v) => (v != null && !isNaN(v) ? v.toFixed(1) : '—');
+
+/**
+ * WHO UV Index risk level for badges / alerts
+ * @param {number} uv
+ * @returns {{ label: string, color: string, bg: string }}
+ */
+export function getUvRiskLevel(uv) {
+  if (uv == null || isNaN(uv)) {
+    return { label: 'N/A', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' };
+  }
+  if (uv >= 11) return { label: 'CỰC CAO', color: '#7f1d1d', bg: 'rgba(127,29,29,0.15)' };
+  if (uv >= 8) return { label: 'RẤT CAO', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
+  if (uv >= 6) return { label: 'CAO', color: '#f97316', bg: 'rgba(249,115,22,0.1)' };
+  if (uv >= 3) return { label: 'TRUNG BÌNH', color: '#eab308', bg: 'rgba(234,179,8,0.1)' };
+  return { label: 'THẤP', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' };
+}
+
+/** Format decimal hours as "Xh Ym" */
+export function formatDayLengthHours(hours) {
+  if (hours == null || isNaN(hours)) return '—';
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${h}h ${m}m`;
+}
 
 /** Format date (short) */
 export const formatDateShort = d3.timeFormat('%d/%m/%Y');

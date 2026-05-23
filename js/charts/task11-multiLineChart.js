@@ -1,5 +1,5 @@
 /**
- * task11-lineChart.js – Độ dài ban ngày theo 6 vùng
+ * task11-multiLineChart.js – Độ dài ban ngày theo 6 vùng
  *
  * Chart type : Multi-line Chart (1 đường / vùng)
  * X-axis     : Tháng (aggregate theo tháng)
@@ -9,35 +9,21 @@
  * Interactions:
  *   - Hover crosshair  → tooltip hiện tất cả 6 vùng tại tháng đó
  *   - Legend click     → toggle ẩn/hiện đường tương ứng (transition opacity)
- *   - Filter dropdown  → filter theo vùng, transition path
+ *   - btn-national-t11 → chỉ hiện đường trung bình toàn quốc
  *
- * Dependencies (globals expected on window):
- *   d3  (v7)
- *
- * Shared utilities (ES module imports):
- *   REGION_COLORS, REGION_SHORT, regionColor  from '../utils.js'
- *   Tooltip                                   from '../components/tooltip.js'
- *   Legend                                    from '../components/legend.js'
- *   loadWeatherData                           from '../dataLoader.js'
+ * Filters: data đã lọc bởi main.js (uv_dashboard global filters)
  */
 
-import { REGION_COLORS, REGION_SHORT, regionColor, sanitizeKey } from '../utils.js';
+import { REGION_SHORT, regionColor, sanitizeKey } from '../utils.js';
 import { Tooltip } from '../components/tooltip.js';
 import { Legend } from '../components/legend.js';
-import { loadWeatherData } from '../dataLoader.js';
 
 /* ─── Constants ─────────────────────────────────────────── */
 
-const CONTAINER = '#chart-task11';          // div that holds the chart
-const CHART_ID = 'task11';
+const CONTAINER = '#chart-task11';
+const SVG_HEIGHT = 400;
 
 const MARGIN = { top: 30, right: 60, bottom: 60, left: 60 };
-
-// Vietnamese month labels
-const MONTH_LABELS = [
-  'T1', 'T2', 'T3', 'T4', 'T5', 'T6',
-  'T7', 'T8', 'T9', 'T10', 'T11', 'T12',
-];
 
 /* ─── Module-level state ─────────────────────────────────── */
 
@@ -72,7 +58,6 @@ export function render(data, filters = {}) {
 
   _drawChart(series, nationalSeries);
   _drawLegend(series);
-  _buildStatCards(series);
   _applyVisibilityTransition(_activeKeys); // Set trạng thái khởi tạo
 
   // Attach National Only button listener
@@ -150,16 +135,35 @@ function _drawChart(series, nationalSeries) {
   const container = document.querySelector(CONTAINER);
   if (!container) return;
 
-  // ── Dimensions ──────────────────────────────────────────
-  const totalW = container.clientWidth || 800;
-  const totalH = 420; // Fixed height to prevent unbounded growth from stats cards
+  container.style.overflow = 'hidden';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+
+  let chartArea = container.querySelector('.task11-chart-area');
+  if (!chartArea) {
+    d3.select(container).selectAll('svg').remove();
+    chartArea = document.createElement('div');
+    chartArea.className = 'task11-chart-area';
+    chartArea.style.flex = '1 1 auto';
+    chartArea.style.minHeight = '0';
+    chartArea.style.height = `${SVG_HEIGHT}px`;
+    chartArea.style.position = 'relative';
+    const legendEl = container.querySelector('.chart-legend-container');
+    if (legendEl) {
+      container.insertBefore(chartArea, legendEl);
+    } else {
+      container.prepend(chartArea);
+    }
+  }
+
+  const totalW = chartArea.clientWidth || container.clientWidth || 800;
+  const totalH = SVG_HEIGHT;
   const innerW = totalW - MARGIN.left - MARGIN.right;
   const innerH = totalH - MARGIN.top - MARGIN.bottom;
 
-  // ── Clear & create SVG ───────────────────────────────────
-  d3.select(CONTAINER).select('svg').remove();
+  d3.select(chartArea).selectAll('svg').remove();
 
-  const svg = d3.select(CONTAINER)
+  const svg = d3.select(chartArea)
     .append('svg')
     .attr('width', totalW)
     .attr('height', totalH)
@@ -442,12 +446,15 @@ function _attachHoverBehavior(g, svg, series, nationalSeries, xScale, yScale, in
 /* ─── Legend ────────────────────────────────────────────── */
 
 function _drawLegend(series, activeKeys) {
-  // Ensure legend container exists inside chart container
-  let legendContainer = document.querySelector(`${CONTAINER} .chart-legend-container`);
-  if (!legendContainer) {
+  const container = document.querySelector(CONTAINER);
+  let legendContainer = container?.querySelector('.chart-legend-container');
+  if (!legendContainer && container) {
     legendContainer = document.createElement('div');
     legendContainer.className = 'chart-legend-container';
-    document.querySelector(CONTAINER)?.appendChild(legendContainer);
+    legendContainer.style.flexShrink = '0';
+    legendContainer.style.maxHeight = '56px';
+    legendContainer.style.overflowY = 'auto';
+    container.appendChild(legendContainer);
     _legend = new Legend(`${CONTAINER} .chart-legend-container`);
   }
 
@@ -542,82 +549,4 @@ function _applyVisibilityTransition(activeSet) {
       .ease(d3.easeQuadInOut)
       .attr('opacity', dotOpacity);
   });
-}
-
-/* ============================================================
-   STAT CARDS
-   ============================================================ */
-function _buildStatCards(series) {
-  let statsEl = document.getElementById('task11-stats');
-  if (statsEl) return;
-
-  const cardBody = document.querySelector('#chart-task11');
-  if (!cardBody) return;
-
-  statsEl = document.createElement('div');
-  statsEl.id = 'task11-stats';
-  statsEl.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;';
-
-  let peakVal = -Infinity, peakRegion = '', peakDate = null;
-  let lowVal = Infinity, lowRegion = '', lowDate = null;
-
-  series.forEach(s => {
-    s.values.forEach(v => {
-      if (v.avgHours > peakVal) { peakVal = v.avgHours; peakRegion = s.region; peakDate = v.date; }
-      if (v.avgHours < lowVal) { lowVal = v.avgHours; lowRegion = s.region; lowDate = v.date; }
-    });
-  });
-
-  // Chênh lệch lớn nhất (khoảng tháng 6)
-  let maxDiff = 0;
-  if (series.length > 0 && series[0].values.length > 0) {
-    const juneVals = series.map(s => {
-      const v = s.values.find(d => d.date.getMonth() === 5); // June
-      return v ? v.avgHours : null;
-    }).filter(v => v !== null);
-    if (juneVals.length > 0) {
-      maxDiff = d3.max(juneVals) - d3.min(juneVals);
-    }
-  }
-
-  const cards = [
-    {
-      cls: 'peak', color: '#ffb347', label: 'NGÀY DÀI NHẤT',
-      value: `${peakVal.toFixed(1)}h`,
-      desc: `${REGION_SHORT[peakRegion] || peakRegion}, Tháng ${peakDate.getMonth() + 1}/${peakDate.getFullYear()}`
-    },
-    {
-      cls: 'low', color: '#b08cff', label: 'NGÀY NGẮN NHẤT',
-      value: `${lowVal.toFixed(1)}h`,
-      desc: `${REGION_SHORT[lowRegion] || lowRegion}, Tháng ${lowDate.getMonth() + 1}/${lowDate.getFullYear()}`
-    },
-    {
-      cls: 'summer', color: '#4fc3f7', label: 'MÙA NGÀY DÀI',
-      value: 'Tháng 5–8',
-      desc: 'Thời gian ban ngày lớn hơn ban đêm'
-    },
-    {
-      cls: 'range', color: '#7fd16e', label: 'LỆCH THEO VĨ ĐỘ',
-      value: `~${maxDiff.toFixed(1)}h`,
-      desc: 'Chênh lệch giờ sáng giữa Bắc và Nam vào Hè'
-    },
-  ];
-
-  cards.forEach(c => {
-    const div = document.createElement('div');
-    div.style.cssText = `background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:12px;padding:14px 18px;position:relative;overflow:hidden;`;
-    div.innerHTML = `
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c.color};"></div>
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:7px;">${c.label}</div>
-      <div style="font-size:24px;font-weight:700;letter-spacing:-0.3px;line-height:1;margin-bottom:5px;color:${c.color};">${c.value}</div>
-      <div style="font-size:11px;color:var(--color-text-muted);">${c.desc}</div>`;
-    statsEl.appendChild(div);
-  });
-
-  const legendEl = document.querySelector(`${CONTAINER} .chart-legend-container`);
-  if (legendEl && legendEl.parentNode) {
-    legendEl.parentNode.insertBefore(statsEl, legendEl.nextSibling);
-  } else {
-    cardBody.parentNode?.appendChild(statsEl);
-  }
 }

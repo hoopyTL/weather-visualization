@@ -172,18 +172,20 @@ export function render(data, options = {}) {
     .style('stroke-width', '1px');
 
   // Draw axis labels with auto adjustment text anchor
+  // We will compute dynamic averages inside updateAxisLabels
+
   const axisLabels = gridGroup.selectAll('.axis-label-text')
     .data(METRICS);
 
-  axisLabels.join('text')
+  const axisLabelsSelection = axisLabels.join('text')
     .attr('class', 'axis-label-text')
     .attr('x', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
-      return cx + (radius + 15) * Math.cos(angle);
+      return cx + (radius + 25) * Math.cos(angle);
     })
     .attr('y', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
-      return cy + (radius + 15) * Math.sin(angle);
+      return cy + (radius + 25) * Math.sin(angle);
     })
     .attr('text-anchor', (d, i) => {
       const angle = i * angleSlice - Math.PI / 2;
@@ -195,10 +197,49 @@ export function render(data, options = {}) {
       const sin = Math.sin(angle);
       return Math.abs(sin) < 0.1 ? 'middle' : sin > 0 ? 'hanging' : 'alphabetic';
     })
-    .style('font-size', 'var(--fs-xs)')
-    .style('fill', 'var(--color-text-secondary)')
-    .style('font-weight', 'var(--fw-medium)')
-    .text(d => d.label);
+    .style('font-size', 'var(--fs-xs)');
+
+  const updateAxisLabels = (regionKey) => {
+    let activeKeys = legend.getActive();
+    if (!activeKeys || activeKeys.size === 0) {
+      activeKeys = new Set(regionNames);
+    }
+    
+    const activeData = regionData.filter(r => activeKeys.has(r.region));
+    const activeAverages = {};
+    METRICS.forEach(m => {
+      activeAverages[m.key] = activeData.length > 0 ? d3.mean(activeData, d => d[m.key]) : 0;
+    });
+
+    axisLabelsSelection.each(function(d) {
+      let val;
+      if (regionKey) {
+        const rData = regionData.find(r => r.region === regionKey);
+        val = rData ? rData[d.key] : activeAverages[d.key];
+      } else {
+        val = activeAverages[d.key];
+      }
+      
+      const el = d3.select(this);
+      el.selectAll('*').remove();
+      
+      el.append('tspan')
+        .attr('x', el.attr('x'))
+        .attr('dy', '-0.5em')
+        .style('fill', 'var(--color-text-secondary)')
+        .style('font-weight', 'var(--fw-medium)')
+        .text(d.label);
+        
+      el.append('tspan')
+        .attr('x', el.attr('x'))
+        .attr('dy', '1.2em')
+        .style('fill', regionKey ? regionColor(regionKey) : 'var(--color-text-primary)')
+        .style('font-weight', 'var(--fw-bold)')
+        .text(d.format(val));
+    });
+  };
+
+  updateAxisLabels(null);
 
   // 5. Draw radar polygons
   const getRadarPath = (d) => {
@@ -237,6 +278,34 @@ export function render(data, options = {}) {
       .attr('d', getRadarPath)),
     exit => exit.call(exit => exit.transition().duration(400).style('opacity', 0).remove())
   );
+
+  // Also bind direct DOM hover events on the HTML legend items for robustness
+  d3.selectAll('#task03-controls .chart-legend__item')
+    .on('mouseenter', function(event, d) {
+      const key = d.key;
+      polygonGroup.selectAll('.radar-polygon')
+        .transition().duration(200)
+        .style('opacity', p => p.region === key ? 1 : 0)
+        .style('pointer-events', p => p.region === key ? 'auto' : 'none');
+
+      polygonGroup.selectAll('.radar-polygon')
+        .filter(p => p.region === key)
+        .raise();
+
+      dotGroup.selectAll('.radar-dot')
+        .transition().duration(200)
+        .style('opacity', dd => dd.region === key ? 1 : 0)
+        .style('pointer-events', dd => dd.region === key ? 'auto' : 'none');
+
+      dotGroup.selectAll('.radar-dot')
+        .filter(dd => dd.region === key)
+        .raise();
+        
+      updateAxisLabels(key);
+    })
+    .on('mouseleave', function() {
+      resetHighlight();
+    });
 
   // 6. Draw vertices circles (dots)
   const dotData = [];
@@ -296,6 +365,8 @@ export function render(data, options = {}) {
       .style('opacity', d => d.region === region ? 1.0 : 0.1)
       .filter(d => d.region === region)
       .raise();
+      
+    updateAxisLabels(region);
   };
 
   const resetHighlight = () => {
@@ -309,6 +380,8 @@ export function render(data, options = {}) {
     dotGroup.selectAll('.radar-dot')
       .style('opacity', 1.0)
       .style('opacity', d => activeKeys.has(d.region) ? 1 : 0);
+      
+    updateAxisLabels(null);
   };
 
   // Bind tooltip to polygon hover
@@ -360,17 +433,52 @@ export function render(data, options = {}) {
     key: r
   }));
 
-  legend.render(legendItems, (key, isActive, activeItems) => {
-    polygonGroup.selectAll('.radar-polygon')
-      .transition().duration(300)
-      .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
-      .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
+  // onToggle: click to toggle active regions
+  // onHover: hover over legend item should highlight that region and dim others (like Task 07)
+  legend.render(legendItems,
+    (key, isActive, activeItems) => {
+      polygonGroup.selectAll('.radar-polygon')
+        .transition().duration(300)
+        .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
+        .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
 
-    dotGroup.selectAll('.radar-dot')
-      .transition().duration(300)
-      .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
-      .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
-  });
+      dotGroup.selectAll('.radar-dot')
+        .transition().duration(300)
+        .style('opacity', d => activeItems.has(d.region) ? 1 : 0)
+        .style('pointer-events', d => activeItems.has(d.region) ? 'auto' : 'none');
+        
+      updateAxisLabels(null);
+    },
+    null,
+    (key, isHovering) => {
+      if (isHovering) {
+        // Show only the hovered region (hide others)
+        polygonGroup.selectAll('.radar-polygon')
+          .transition().duration(200)
+          .style('opacity', d => d.region === key ? 1 : 0)
+          .style('pointer-events', d => d.region === key ? 'auto' : 'none');
+
+        // ensure hovered polygon is on top
+        polygonGroup.selectAll('.radar-polygon')
+          .filter(d => d.region === key)
+          .raise();
+
+        dotGroup.selectAll('.radar-dot')
+          .transition().duration(200)
+          .style('opacity', d => d.region === key ? 1 : 0)
+          .style('pointer-events', d => d.region === key ? 'auto' : 'none');
+
+        dotGroup.selectAll('.radar-dot')
+          .filter(d => d.region === key)
+          .raise();
+          
+        updateAxisLabels(key);
+      } else {
+        // Restore state based on active items
+        resetHighlight();
+      }
+    }
+  );
 }
 
 function showPlaceholder(icon, label) {
