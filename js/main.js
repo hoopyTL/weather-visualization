@@ -12,7 +12,7 @@ import { getUvRiskLevel, formatDayLengthHours, formatTerrainLabel } from './util
 import * as task01 from './charts/task01-lineChart.js';
 import * as task02 from './charts/task02-groupedBarChart.js';
 import * as task03 from './charts/task03-radarChart.js';
-import * as task04 from './charts/task04-choroplethMap.js';
+import * as task04 from './charts/task04-temperaturePointMap.js';
 import * as task05 from './charts/task05-divergingBarChart.js';
 import * as task06 from './charts/task06-pointMap.js';
 import * as task07 from './charts/task07-donutChart.js';
